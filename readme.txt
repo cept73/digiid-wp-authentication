@@ -12,19 +12,16 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 extends wordpress default authentication with the digiid-protocol
 
 == Installation ==
-1. check if the server has the "GMP PHP extension", if not see if you (or the server admins) can install it.
-2. Upload it to the `/wp-content/plugins/` directory
+1. check if the server has the "GMP PHP extension", if not you or a server admin must install it.
+2. Upload it to the `/wp-content/plugins/digiid-wp-authentication/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently Asked Questions ==
 = What is digiid? =
-DigiID is a authentication protocol, where the secret never levave the user.
-This is done by the server sending a task to the client, and the client mathematicly prove that it has the secret.
-Read more at https://github.com/digibyte/digiid
+DigiID is an authentication protocol, where the secret is tied to your existing DigiByte Wallet.
 
 = How do i use digiid? =
-You install a bitcoin in your phone, for exemple mycelium or schildbach.
-(There are at the current time no clients in the android market, they are both in a testing phase)
+Install a Digiid compatable wallet (currently DigiByteGo and DigiByte-Wallet)
 
 == reference ==
 This project is built ontop of code made in other projects:
