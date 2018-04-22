@@ -2,16 +2,16 @@
 /**
  * @package Digi-ID Authentication
  * @author Digicontributer (Gary Mckee)
- * @version 1.0.1
+ * @version 1.0.2
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends wordpress default authentication with the Digi-ID protocol
-Version: 1.0.1
+Version: 1.0.2
 Author: Digicontributer (Gary Mckee)
 Author URI: http://digibyte.io
 */
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.0');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.2');
 
 	require_once("digiid.php");
 
