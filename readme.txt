@@ -9,7 +9,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 = Digi-ID Authentication =
-extends wordpress default authentication with the digii-id protocol
+extends wordpress default authentication with the digiid protocol
 
 == Installation ==
 1. check if the server has the "GMP PHP extension", if not you or a server admin must install it.
