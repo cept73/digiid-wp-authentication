@@ -124,7 +124,6 @@ class PublicKey implements PublicKeyInterface {
     }
 
     public function getPublicKey() {
-        print_r($this);
         return $this;
     }
 

@@ -1,4 +1,4 @@
-=== DigiID Authentication ===
+=== Digi-ID Authentication ===
 Contributors: digicontributer
 Tags: Authentication
 Requires at least: 3.0.1
@@ -8,8 +8,8 @@ License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
-= DigiID Authentication =
-extends wordpress default authentication with the digiid-protocol
+= Digi-ID Authentication =
+extends wordpress default authentication with the digii-id protocol
 
 == Installation ==
 1. check if the server has the "GMP PHP extension", if not you or a server admin must install it.
@@ -17,15 +17,8 @@ extends wordpress default authentication with the digiid-protocol
 3. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently Asked Questions ==
-= What is digiid? =
-DigiID is an authentication protocol, where the secret is tied to your existing DigiByte Wallet.
+= What is Digi-ID? =
+Digi-ID is an authentication protocol, where the secret is tied to your existing DigiByte Wallet.
 
-= How do i use digiid? =
-Install a Digiid compatable wallet (currently DigiByteGo and DigiByte-Wallet)
-
-== reference ==
-This project is built ontop of code made in other projects:
-
-* digiid-protocol @ https://github.com/LaurentMT/bitiid (forked from https://github.com/bitiid/bitiid )
-* digiid-php @ https://github.com/conejoninja/bitiid-php
-* phpeec @ https://github.com/mdanter/phpecc
+= How do i use Digi-ID? =
+Install a Digi-ID compatable wallet (currently DigiByteGo and DigiByte-Wallet)

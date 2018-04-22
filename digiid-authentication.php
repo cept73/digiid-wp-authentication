@@ -1,18 +1,16 @@
 <?php
 /**
- * @package DigiID Authentication
- * @author Puggan
- * @version 1.0.0-20151004
+ * @package Digi-ID Authentication
+ * @author Digicontributer (Gary Mckee)
+ * @version 1.0.1
  */
 /*
-Plugin Name: DigiID Authentication
-Description: DigiID Authentication, extends wordpress default authentication with the digiid-protocol
-Version: 1.0.0-20151004
-Author: Puggan
-Author URI: http://blog.puggan.se
-Text Domain: digiid-authentication
+Plugin Name: Digi-ID Authentication
+Description: Digi-ID Authentication, extends wordpress default authentication with the Digi-ID protocol
+Version: 1.0.1
+Author: Digicontributer (Gary Mckee)
+Author URI: http://digibyte.io
 */
-
 DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.0');
 
 	require_once("digiid.php");
@@ -44,7 +42,7 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.0');
 	function digiid_load_translation()
 	{
 		$plugin_dir = basename(dirname(__FILE__));
-		load_plugin_textdomain( 'digiid-authentication', FALSE, $plugin_dir );
+		load_plugin_textdomain( 'Digi-ID-Authentication', FALSE, $plugin_dir );
 	}
 
 	/* check version on load */
@@ -104,10 +102,10 @@ SQL_BLOCK;
 
 	function digiid_menu()
 	{
-		add_options_page( 'DigiID Options', 'DigiID', 'edit_users', 'digiid-authentication', 'digiid_option_page' );
+		// add_options_page( 'Digi-ID Options', 'Digi-ID', 'edit_users', 'Digi-ID-Authentication', 'digiid_option_page' );
 		add_users_page(
-			_x('My DigiID', 'page_title', 'digiid-authentication'),
-			_x('DigiID', 'menu_name', 'digiid-authentication'),
+			_x('My Digi-ID', 'page_title', 'Digi-ID-Authentication'),
+			_x('Digi-ID', 'menu_name', 'Digi-ID-Authentication'),
 			'read',
 			'my-digiid',
 			'digiid_my_option_page'
@@ -163,18 +161,18 @@ SQL_BLOCK;
 
 							if($db_result)
 							{
-								echo digiid_admin_notice(sprintf(__("The address '%s' is now linked to your account.", 'digiid-authentication'), $address));
+								echo digiid_admin_notice(sprintf(__("The address '%s' is now linked to your account.", 'Digi-ID-Authentication'), $address));
 
 								$addresses = digiid_list_users_addresses($user_id);
 							}
 							else
 							{
-								echo digiid_admin_notice(sprintf(__("Failed to link address '%s' to your account.", 'digiid-authentication'), $address), 'error');
+								echo digiid_admin_notice(sprintf(__("Failed to link address '%s' to your account.", 'Digi-ID-Authentication'), $address), 'error');
 							}
 						}
 						else
 						{
-							echo digiid_admin_notice(sprintf(__("The address '%s' isn't valid.", 'digiid-authentication'), $address), 'error');
+							echo digiid_admin_notice(sprintf(__("The address '%s' isn't valid.", 'Digi-ID-Authentication'), $address), 'error');
 						}
 					}
 					else
@@ -182,19 +180,19 @@ SQL_BLOCK;
 						$default_address = (string) @$_REQUEST['address'];
 					}
 
-					$legend_title = _x("Add digiid-address", 'legend_title', 'digiid-authentication');
-					$label_title = _x("DigiID-address", 'input_label', 'digiid-authentication');
-					$button_title = _x("Link to my account", 'button', 'digiid-authentication');
+					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
+					$label_title = _x("Digi-ID address", 'input_label', 'Digi-ID-Authentication');
+					$button_title = _x("Link to my account", 'button', 'Digi-ID-Authentication');
 
 					$qr_url = digiid_get_callback_url(NULL, 'add');
 					$url_encoded_url = urlencode($qr_url);
 
-					$alt_text = htmlentities(_x("QR-code for DigiID", 'qr_alt_text', 'digiid-authentication'), ENT_QUOTES);
+					$alt_text = htmlentities(_x("QR-code for Digi-ID", 'qr_alt_text', 'Digi-ID-Authentication'), ENT_QUOTES);
 
 		$messages .= <<<HTML_BLOCK
 <div id='digiid'>
 	<p>
-		<span>{$title}:</span>
+		<span>Add DigiByte Address:</span>
 	</p>
 </div>
 HTML_BLOCK;
@@ -251,12 +249,12 @@ HTML_BLOCK;
 					{
 						if($_POST)
 						{
-							echo digiid_admin_notice(__("Select some rows before asking to delete them", 'digiid-authentication'), 'error');
+							echo digiid_admin_notice(__("Select some rows before asking to delete them", 'Digi-ID-Authentication'), 'error');
 							break;
 						}
 						else
 						{
-							echo digiid_admin_notice(sprintf(__("Missing paramater '%s'", 'digiid-authentication'), 'address'), 'error');
+							echo digiid_admin_notice(sprintf(__("Missing paramater '%s'", 'Digi-ID-Authentication'), 'address'), 'error');
 							break;
 						}
 					}
@@ -284,7 +282,7 @@ HTML_BLOCK;
 									"The address %s isn't connected to your account.",
 									"Those addresses %s arn't connected to your account.",
 									count($found_addresses),
-									'digiid-authentication'
+									'Digi-ID-Authentication'
 								),
 								"'" . implode("', '", $found_addresses) . "'"
 							),
@@ -321,7 +319,7 @@ HTML_BLOCK;
 									"Failed to remove the adress %s.",
 									"Failed to remove those addresses %s.",
 									count($failed_addresses),
-									'digiid-authentication'
+									'Digi-ID-Authentication'
 								),
 								"'" . implode("', '", $failed_addresses) . "'"
 							),
@@ -337,7 +335,7 @@ HTML_BLOCK;
 									"The address %s is no longer linked to your account.",
 									"Those addresses %s is no longer linked to your account.",
 									count($deleted_addresses),
-									'digiid-authentication'
+									'Digi-ID-Authentication'
 								),
 								"'" . implode("', '", $deleted_addresses) . "'"
 							),
@@ -357,7 +355,7 @@ HTML_BLOCK;
 			}
 		}
 
-		$page_title = _x("My digiid-addresses", "page_title", 'digiid-authentication');
+		$page_title = _x("My Digi-ID addresses", "page_title", 'Digi-ID-Authentication');
 		$add_link_title = __("Add New");
 
 		echo <<<HTML_BLOCK
@@ -371,7 +369,7 @@ HTML_BLOCK;
 
 		if(!$addresses)
 		{
-			echo digiid_admin_notice(__("You have no digiid-addresses connected to your account.", 'digiid-authentication'));
+			echo digiid_admin_notice(__("You have no Digi-ID addresses connected to your account.", 'Digi-ID-Authentication'));
 			return;
 		}
 
@@ -382,9 +380,9 @@ HTML_BLOCK;
 			{
 				return array(
 					'cb' => '<input type="checkbox" />',
-					'address' => _x('DigiID-address', 'column_name', 'digiid-authentication'),
-					'birth' => _x('Added', 'column_name', 'digiid-authentication'),
-					'pulse' => _x('Last time used', 'column_name', 'digiid-authentication'),
+					'address' => _x('Digi-ID address', 'column_name', 'Digi-ID-Authentication'),
+					'birth' => _x('Added', 'column_name', 'Digi-ID-Authentication'),
+					'pulse' => _x('Last time used', 'column_name', 'Digi-ID-Authentication'),
 				);
 			}
 
@@ -430,7 +428,6 @@ HTML_BLOCK;
 			{
 				$action_template = '<a href="?page=%s&action=%s&address=%s">%s</a>';
 				$actions = array(
-					'edit'      => sprintf($action_template, $_REQUEST['page'], 'edit', $item['address'], __('Edit')),
 					'delete'    => sprintf($action_template, $_REQUEST['page'], 'delete', $item['address'], __('Remove')),
 				);
 				return $item['address'] . $this->row_actions($actions);
@@ -547,8 +544,8 @@ HTML_BLOCK;
 			return $messages;
 		}
 
-		$title = _x("DigiID login", 'qr_image_label', 'digiid-authentication');
-		$alt_text = htmlentities(_x("QR-code for DigiID", 'qr_alt_text', 'digiid-authentication'), ENT_QUOTES);
+		$title = _x("Digi-ID login", 'qr_image_label', 'Digi-ID-Authentication');
+		$alt_text = htmlentities(_x("QR-code for Digi-ID", 'qr_alt_text', 'Digi-ID-Authentication'), ENT_QUOTES);
 
 		$url_encoded_url = urlencode($url);
 		$messages .= <<<HTML_BLOCK

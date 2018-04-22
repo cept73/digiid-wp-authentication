@@ -18,7 +18,7 @@
 	if(!$nonce_row)
 	{
 		$data['status'] = -1;
-		$data['html'] = "<p>" . __("Error: The current session doesn't have a digiid-nonce.", 'digiid-authentication') . "</p>";
+		$data['html'] = "<p>" . __("Error: The current session doesn't have a Digi-ID-nonce.", 'Digi-ID-Authentication') . "</p>";
 	}
 	else
 	{
@@ -39,7 +39,7 @@
 
 						if(is_user_logged_in())
 						{
-							$data['html'] = "<p>" . __("Allredy logged in", 'digiid-authentication') . "</p>";
+							$data['html'] = "<p>" . __("Allredy logged in", 'Digi-ID-Authentication') . "</p>";
 							$data['reload'] = 1;
 						}
 						else
@@ -51,7 +51,7 @@
 								wp_set_auth_cookie($user->ID);
 								do_action('wp_login', $user->user_login, $user);
 
-								$data['html'] = "<p>" . sprintf(__("Sucess, loged in as '%s'", 'digiid-authentication'), $user->user_login) . "</p>";
+								$data['html'] = "<p>" . sprintf(__("Sucess, loged in as '%s'", 'Digi-ID-Authentication'), $user->user_login) . "</p>";
 								$data['reload'] = 1;
 
 								$update_query = $GLOBALS['wpdb']->prepare("UPDATE {$table_name_userlink} SET pulse = NOW() WHERE address = %s", $data['adress']);
@@ -59,13 +59,13 @@
 							}
 							else
 							{
-								$data['html'] = "<p>" . sprintf(__("DigiID verification Sucess, but no useraccount connected to '%s'", 'digiid-authentication'), $data['adress']) . "</p>";
+								$data['html'] = "<p>" . sprintf(__("Digi-ID verification Sucess, but no useraccount connected to '%s'", 'Digi-ID-Authentication'), $data['adress']) . "</p>";
 							}
 						}
 					}
 					else
 					{
-						$data['html'] = "<p>" . sprintf(__("DigiID verification Sucess, but no useraccount connected to '%s'", 'digiid-authentication'), $data['adress']) . "</p>";
+						$data['html'] = "<p>" . sprintf(__("Digi-ID verification Sucess, but no useraccount connected to '%s'", 'Digi-ID-Authentication'), $data['adress']) . "</p>";
 					}
 				}
 				else
@@ -79,7 +79,7 @@
 			default:
 			{
 				$data['status'] = -1;
-				$data['html'] = "<p>" . __("Unknown action: ", 'digiid-authentication') . $user_row['nonce_action'] . "</p>";
+				$data['html'] = "<p>" . __("Unknown action: ", 'Digi-ID-Authentication') . $user_row['nonce_action'] . "</p>";
 				break;
 			}
 		}

@@ -88,7 +88,6 @@
 
 	$digiid = new DigiID();
 
-	var_dump($post_data['address'], $post_data['signature'], $post_data['uri']);
 	$signValid = $digiid->isMessageSignatureValidSafe($post_data['address'], $post_data['signature'], $post_data['uri'], FALSE);
 
 	if(!$signValid)
@@ -124,7 +123,7 @@
 				}
 				else
 				{
-					DigiID::http_error(51, "Can't add digiid to a userless session", 500, 'Internal Server Error');
+					DigiID::http_error(51, "Can't add Digi-ID to a userless session", 500, 'Internal Server Error');
 					die();
 				}
 			}
