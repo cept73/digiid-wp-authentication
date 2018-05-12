@@ -72,7 +72,6 @@ CREATE TABLE {$table_name_nonce} (
 	PRIMARY KEY (nonce),
 	KEY (birth)
 )
-ENGINE=InnoDB
 DEFAULT CHARSET=utf8
 COLLATE=utf8_bin
 SQL_BLOCK;
@@ -88,7 +87,6 @@ CREATE TABLE {$table_name_links} (
 	KEY (birth),
 	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID)
 )
-ENGINE=InnoDB
 DEFAULT CHARSET=utf8
 COLLATE=utf8_bin
 SQL_BLOCK;
