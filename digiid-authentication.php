@@ -61,6 +61,10 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.2');
 		$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
 		$table_name_users = "{$GLOBALS['wpdb']->prefix}users";
 
+		// Detect current engine, use the same
+		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='wp_users'";
+		$db_engine = $GLOBALS['wpdb']->get_var($get_engine_table_users);
+		
 		$create_table_nonce = <<<SQL_BLOCK
 CREATE TABLE {$table_name_nonce} (
 	nonce VARCHAR(32) NOT NULL,
@@ -72,6 +76,7 @@ CREATE TABLE {$table_name_nonce} (
 	PRIMARY KEY (nonce),
 	KEY (birth)
 )
+ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
 COLLATE=utf8_bin
 SQL_BLOCK;
@@ -87,6 +92,7 @@ CREATE TABLE {$table_name_links} (
 	KEY (birth),
 	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID)
 )
+ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
 COLLATE=utf8_bin
 SQL_BLOCK;
