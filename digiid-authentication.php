@@ -62,7 +62,7 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.2');
 		$table_name_users = "{$GLOBALS['wpdb']->prefix}users";
 
 		// Detect current engine, use the same
-		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='wp_users'";
+		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$GLOBALS['wpdb']->prefix}users'";
 		$db_engine = $GLOBALS['wpdb']->get_var($get_engine_table_users);
 		
 		$create_table_nonce = <<<SQL_BLOCK
