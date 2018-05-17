@@ -64,7 +64,7 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.2');
 		// Detect current engine, use the same
 		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$GLOBALS['wpdb']->prefix}users'";
 		$db_engine = $GLOBALS['wpdb']->get_var($get_engine_table_users);
-		if (!$db_engine) $db_engine = "MyISAM"; // if some error, use MyISAM
+		if (!$db_engine) $db_engine = "InnoDB"; // if some error, use InnoDB
 		
 		$create_table_nonce = <<<SQL_BLOCK
 CREATE TABLE {$table_name_nonce} (
