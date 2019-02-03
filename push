@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# How to use:
+# ./push Text of commit  <- zip and commit to repository
+# ./push   <- only zip
+
+# Do zip
+zip digiid-wp-authentication *.php
+echo "Zipped to module"
+
+# Require params if we want to push it to repository
+if [ -n "$*" ]
+then
+    # Add all with comment, specified as params
+    git add .
+    git commit -m "$*"
+    git push
+else
+    echo "To send to repository: push [description of changes]"
+    exit
+fi
+
