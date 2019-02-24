@@ -85,7 +85,7 @@ SQL_BLOCK;
 		$create_table_links = <<<SQL_BLOCK
 CREATE TABLE {$table_name_links} (
 	user_id BIGINT(20) UNSIGNED NOT NULL,
-	address VARCHAR(34) COLLATE utf8_bin DEFAULT NULL,
+	address VARCHAR(34) NOT NULL,
 	birth DATETIME NOT NULL,
 	pulse DATETIME NOT NULL,
 	PRIMARY KEY (address),
