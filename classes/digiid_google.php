@@ -15,26 +15,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
+
 if (extension_loaded('gmp'))
 {
-    define('USE_EXT', 'GMP');
+    define('DIGIID_AUTHENTICATION_USE_EXT', 'GMP');
 }
 else
 {
     die('GMP extension required.'); // It may be available in a package called "php5-gmp" or similar for your system
 }
 
-require_once("CurveFpInterface.php");
-require_once("CurveFp.php");
-require_once("PointInterface.php");
-require_once("Point.php");
-require_once("gmp_Utils.php");
-require_once("SignatureInterface.php");
-require_once("Signature.php");
-require_once("NumberTheory.php");
-require_once("PublicKeyInterface.php");
-require_once("PublicKey.php");
-
+if (!class_exists('\DigiIdAuthentication\DigiID')) {
 
 /**
  * Class DigiID
@@ -460,4 +454,6 @@ class DigiID
 		echo json_encode(array('address' => (string) $address, 'nonce' => (string) $nonce));
 		die(PHP_EOL);
 	}
+}
+
 }

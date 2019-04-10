@@ -21,6 +21,10 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
+
 /**
  * This class is a representation of an EC over a field modulo a prime number
  *
@@ -28,6 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
  *  - Does the curve contain a point?
  *  - Comparison of two curves.
  */
+if (!class_exists('\DigiIdAuthentication\CurveFp')) {
+
 class CurveFp implements CurveFpInterface {
 
     //Elliptic curve over the field of integers modulo a prime
@@ -102,4 +108,5 @@ class CurveFp implements CurveFpInterface {
     }
 
 }
-?>
+
+}

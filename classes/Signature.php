@@ -21,22 +21,34 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
- * This is the contract for the PublicKey portion of ECDSA.
+ * Plain Old PHP Object that stores the signature r,s for ECDSA
  *
  * @author Matej Danter
  */
-interface PublicKeyInterface {
-    
-    public function __construct(Point $generator, Point $point);
 
-    public function verifies($hash, Signature $signature);
+class Signature implements SignatureInterface{
 
-    public function getCurve();
+    protected $r;
+    protected $s;
 
-    public function getGenerator();
+    public function  __construct($r, $s) {
+        $this->r = $r;
+        $this->s = $s;
 
-    public function getPoint();
 
+    }
+
+
+    public function getR(){
+        return $this->r;
+    }
+
+    public function getS(){
+        return $this->s;
+    }
 }
 ?>

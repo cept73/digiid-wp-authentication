@@ -21,12 +21,17 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * The gmp extension in PHP does not implement certain necessary operations
  * for elliptic curve encryption
  * This class implements all neccessary static methods
  *
  */
+if (!class_exists('\DigiIdAuthentication\gmp_Utils')) {
+
 class gmp_Utils {
 
     public static function gmp_mod2($n, $d) {
@@ -76,4 +81,5 @@ class gmp_Utils {
     }
 
 }
-?>
+
+}

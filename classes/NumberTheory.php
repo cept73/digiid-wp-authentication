@@ -21,6 +21,9 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
  * Implementation of some number theoretic algorithms
  *
@@ -31,6 +34,8 @@ OTHER DEALINGS IN THE SOFTWARE.
  *
  *
  */
+if (!class_exists('\DigiIdAuthentication\NumberTheory')) {
+
 class NumberTheory {
 
     public static function modular_exp($base, $exponent, $modulus) {
@@ -833,4 +838,5 @@ class NumberTheory {
         1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229);
 
 }
-?>
+
+}

@@ -1,5 +1,9 @@
 <?php
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
+
 	$raw_post_data = file_get_contents('php://input');
 
 	$variables = array('address', 'signature', 'uri');
@@ -45,7 +49,7 @@
 		}
 	}
 
-	require_once("digiid.php");
+	require_once("required_classes.php");
 
 	if(!array_filter($post_data))
 	{

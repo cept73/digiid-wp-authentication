@@ -21,31 +21,39 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
- * Plain Old PHP Object that stores the signature r,s for ECDSA
+ * This is the contract for implementing Point, which encapsulates entities
+ * and operations over the points on the Elliptic Curve.
  *
  * @author Matej Danter
  */
+interface PointInterface {
+    public function __construct(CurveFp $curve, $x, $y, $order = null);
 
-class Signature implements SignatureInterface{
+    public static function cmp($p1, $p2);
 
-    protected $r;
-    protected $s;
+    public static function add($p1, $p2);
 
-    public function  __construct($r, $s) {
-        $this->r = $r;
-        $this->s = $s;
+    public static function mul($x2, Point $p1);
 
+    public static function leftmost_bit($x);
 
-    }
+    public static function rmul(Point $p1, $m);
 
+    public function __toString();
 
-    public function getR(){
-        return $this->r;
-    }
+    public static function double(Point $p1);
 
-    public function getS(){
-        return $this->s;
-    }
+    public function getX();
+
+    public function getY();
+
+    public function getCurve();
+
+    public function getOrder();
+
 }
 ?>

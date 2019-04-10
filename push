@@ -5,7 +5,8 @@
 # ./push   <- only zip
 
 # Do zip
-zip digiid-wp-authentication *.php
+rm digiid-wp-authentication.zip
+zip digiid-wp-authentication *.php *.js *.css *.jpg classes/*.php
 echo "Zipped to module"
 
 # Require params if we want to push it to repository

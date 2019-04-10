@@ -1,0 +1,30 @@
+
+body.login.login-action-login {
+    cursor: default;
+}
+
+body.login.login-action-login #digiid {
+    background: white;
+    padding: 30px 0px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.13);
+}
+
+body.login.login-action-login #digiid p.msg {
+    text-align: center;
+}
+
+#digiid-addnew fieldset {
+    width: 40em;
+    padding: 10px 10px 30px 10px;
+    margin: 10px;
+    background: white;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.13);
+}
+
+#digiid-addnew legend h2 {
+    background: white;
+    padding: 5px 10px
+}
+

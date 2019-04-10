@@ -1,32 +1,35 @@
 <?php
 /**
  * @package Digi-ID Authentication
- * @author Digicontributer (Gary Mckee)
- * @version 1.0.2
+ * @author Taranov Sergey (Cept)
+ * @version 1.0.3
  */
 /*
 Plugin Name: Digi-ID Authentication
-Description: Digi-ID Authentication, extends wordpress default authentication with the Digi-ID protocol
-Version: 1.0.2
-Author: Digicontributer (Gary Mckee)
-Author URI: http://digibyte.io
+Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
+Version: 1.0.3
+Author: Taranov Sergey (Cept), digicontributor
+Author URI: http://github.com/cept73
 */
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.2');
 
-	require_once("digiid.php");
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.3');
+
+	require_once ('required_classes.php');
 
 	register_activation_hook( __FILE__, 'digiid_install' );
 
-	add_action( 'plugins_loaded', 'digiid_update_db_check' );
-	add_action( 'login_enqueue_scripts', 'digiid_login_script' );
-	add_action( 'wp_logout', 'digiid_exit');
-	add_action( 'init', 'digiid_init');
-	add_action( 'admin_menu', 'digiid_menu' );
-	add_action( 'template_redirect', 'digiid_callback_test' );
-	add_action( 'wp_ajax_nopriv_digiid', 'digiid_ajax' );
-	add_action( 'plugins_loaded', 'digiid_load_translation' );
+	add_action( 'plugins_loaded', '\DigiIdAuthentication\digiid_update_db_check' );
+	add_action( 'login_enqueue_scripts', '\DigiIdAuthentication\digiid_login_script' );
+	add_action( 'wp_logout', '\DigiIdAuthentication\digiid_exit');
+	add_action( 'init', '\DigiIdAuthentication\digiid_init');
+	add_action( 'admin_menu', '\DigiIdAuthentication\digiid_menu' );
+	add_action( 'template_redirect', '\DigiIdAuthentication\digiid_callback_test' );
+	add_action( 'wp_ajax_nopriv_digiid', '\DigiIdAuthentication\digiid_ajax' );
+	add_action( 'plugins_loaded', '\DigiIdAuthentication\digiid_load_translation' );
 
-	add_filter( 'login_message', 'digiid_login_header' );
+	add_filter( 'login_message', '\DigiIdAuthentication\digiid_login_header' );
 
 	function digiid_init()
 	{
@@ -113,7 +116,7 @@ SQL_BLOCK;
 			_x('Digi-ID', 'menu_name', 'Digi-ID-Authentication'),
 			'read',
 			'my-digiid',
-			'digiid_my_option_page'
+			'\DigiIdAuthentication\digiid_my_option_page'
 		);
 	}
 
@@ -153,6 +156,7 @@ SQL_BLOCK;
 						$address = $_POST['address'];
 						$default_address = $address;
 						$digiid = new DigiID();
+
 						if($digiid->isAddressValid($address, FALSE) OR $digiid->isAddressValid($address, TRUE))
 						{
 							$userlink_row = array();
@@ -186,45 +190,38 @@ SQL_BLOCK;
 					}
 
 					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
-					$label_title = _x("Digi-ID address", 'input_label', 'Digi-ID-Authentication');
+					$label_scan = _x("Scan it till 'Digi-ID success'", 'label_scan', 'Digi-ID-Authentication');
+					$label_title = _x("or specify here", 'input_title', 'Digi-ID-Authentication');
 					$button_title = _x("Link to my account", 'button', 'Digi-ID-Authentication');
 
 					$qr_url = digiid_get_callback_url(NULL, 'add');
 					$url_encoded_url = urlencode($qr_url);
-
 					$alt_text = htmlentities(_x("QR-code for Digi-ID", 'qr_alt_text', 'Digi-ID-Authentication'), ENT_QUOTES);
 
-		$messages .= <<<HTML_BLOCK
-<div id='digiid'>
-	<p>
-		<span>Add DigiByte Address:</span>
-	</p>
-</div>
-HTML_BLOCK;
-
+					wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
+					wp_add_inline_script('digiid_digiqr', 'document.getElementById("qr").src = DigiQR.id("'.$qr_url.'",250,3,0)');
+					//wp_add_inline_script('digiid_digiqr', 'setTimeout("window.location=\'' . admin_url('users.php?page=my-digiid') . '\'", 60000);');
+					wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css');
 
 					echo <<<HTML_BLOCK
-<form action='?page={$_REQUEST['page']}&action=add' method='post'>
-	<fieldset style='border: solid black 2px; width: 40em; padding: 10px; margin: 10px;'>
+<form action='?page={$_REQUEST['page']}&action=add' method='post' id='digiid-addnew'>
+	<fieldset>
 		<legend style='font-size: larger;'>
-			{$legend_title}
+			<h2>{$legend_title}</h2>
 		</legend>
 		<div class='fieldset_content'>
-			<label>
-				<span style='width: 10em; display: inline-block;'>
-					{$label_title}:
-				</span>
-				<input type='text' name='address' value='{$default_address}' style='width: 25em;'/>
-			</label>
-			<br />
-			<input type='submit' value='{$button_title}' style='margin-left: 10em;' />
+			<center>
+				<h2>{$label_scan}:</h2>
+				<a href='{$url}'><img id="qr" alt='{$alt_text}' title='{$alt_text}' style="display: block"></a>
+				<h2>{$label_title}:</h2>
+				<label>
+					<input type='text' name='address' value='{$default_address}' style='width: 400px; text-align: center' />
+				</label>
+				<br />
+				<input type='submit' value='{$button_title}' />
+			</center>
 		</div>
 	</fieldset>
-	<p>
-		<a href='{$qr_url}'>
-			<img src='https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl={$url_encoded_url}' alt='{$alt_text}' title='{$alt_text}' />
-		</a>
-	</p>
 </form>
 HTML_BLOCK;
 					break;
@@ -378,7 +375,7 @@ HTML_BLOCK;
 			return;
 		}
 
-		class my_digiid_addresses extends WP_List_Table
+		class my_digiid_addresses extends \WP_List_Table
 		{
 
 			function get_columns()
@@ -543,7 +540,6 @@ HTML_BLOCK;
 	function digiid_login_header($messages)
 	{
 		$url = digiid_get_callback_url(NULL, 'login');
-
 		if(!$url)
 		{
 			return $messages;
@@ -551,17 +547,46 @@ HTML_BLOCK;
 
 		$title = _x("Digi-ID login", 'qr_image_label', 'Digi-ID-Authentication');
 		$alt_text = htmlentities(_x("QR-code for Digi-ID", 'qr_alt_text', 'Digi-ID-Authentication'), ENT_QUOTES);
-
 		$url_encoded_url = urlencode($url);
+
+		wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
+		wp_add_inline_script('digiid_digiqr', 'document.getElementById("qr").src = DigiQR.id("'.$url.'",250,3,0)');
+		wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css');
+		wp_add_inline_script('digiid_digiqr', <<<JS
+		function digiid_copyToClipboard (str) {
+		  const el = document.createElement('textarea');  // Create a <textarea> element
+		  el.value = str;                                 // Set its value to the string that you want copied
+		  el.setAttribute('readonly', '');                // Make it readonly to be tamper-proof
+		  el.style.position = 'absolute';                 
+		  el.style.left = '-9999px';                      // Move outside the screen to make it invisible
+		  document.body.appendChild(el);                  // Append the <textarea> element to the HTML document
+		  const selected =            
+			document.getSelection().rangeCount > 0        // Check if there is any content selected previously
+			  ? document.getSelection().getRangeAt(0)     // Store selection if found
+			  : false;                                    // Mark as false to know no selection existed before
+		  el.select();                                    // Select the <textarea> content
+		  document.execCommand('copy');                   // Copy - only works as a result of a user action (e.g. click events)
+		  document.body.removeChild(el);                  // Remove the <textarea> element
+		  if (selected) {                                 // If a selection existed before copying
+			document.getSelection().removeAllRanges();    // Unselect everything on the HTML document
+			document.getSelection().addRange(selected);   // Restore the original selection
+		  }
+		  return false;
+		};
+JS
+);
+		
 		$messages .= <<<HTML_BLOCK
 <div id='digiid'>
-	<p>
-		<span>{$title}:</span>
-		<a href='{$url}'>
-			<img src='https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl={$url_encoded_url}' alt='{$alt_text}' title='{$alt_text}' />
-		</a>
-	</p>
+
+		<h1>{$title}:</h1>
+
+		<div style="margin-top: 10px; text-align: center">
+			<a href='{$url}'><img id="qr" alt='{$alt_text}' title='{$alt_text}'></a>
+		</div>
+
 </div>
+
 HTML_BLOCK;
 
 		return $messages;
@@ -572,10 +597,26 @@ HTML_BLOCK;
 		$ajax_url = admin_url('admin-ajax.php?action=digiid');
 
 		$js = <<<JS_BLOCK
-var digiid_interval_resource;
-digiid_interval_resource = setInterval(
+var digiid_timetologin = true;
+setTimeout("digiid_timetologin = false", 120000); // 2 min
+
+var digiid_interval_resource = setInterval(
 	function()
 	{
+		if (!digiid_timetologin)
+		{
+			clearInterval(digiid_interval_resource);
+
+			// Make opacity
+			el = document.getElementById('digiid');
+			el.style.opacity = 0.1;
+
+			// Hide link
+			el = document.getElementById("qr")
+			el.parentElement.href=window.location;
+			return;
+		}
+
 		var ajax = new XMLHttpRequest();
 		ajax.open("GET", "{$ajax_url}", true);
 		ajax.onreadystatechange =
@@ -585,13 +626,19 @@ digiid_interval_resource = setInterval(
 				{
 					return;
 				}
-				else if(ajax.responseText > '')
+
+				if(ajax.responseText > '')
 				{
 					var json = JSON.parse(ajax.responseText);
 
 					if(json.html > '')
 					{
 						document.getElementById('digiid').innerHTML = json.html;
+
+						/*if (!document.getElementById('qr')) {
+							el = document.getElementById('digiid-or-pass');
+							el.remove();
+						}*/
 					}
 
 					if(json.stop > 0)
@@ -615,10 +662,11 @@ digiid_interval_resource = setInterval(
 			};
 		ajax.send();
 	},
-	3000
+	4000
 );
 JS_BLOCK;
 
+		//wp_add_inline_script('digiid_digiqr_intervals', $js);
 		echo "<script type=\"text/javascript\">\n{$js}\n</script>";
 	}
 

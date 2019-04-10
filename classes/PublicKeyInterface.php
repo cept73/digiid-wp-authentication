@@ -21,36 +21,25 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
- * This is the contract for implementing Point, which encapsulates entities
- * and operations over the points on the Elliptic Curve.
+ * This is the contract for the PublicKey portion of ECDSA.
  *
  * @author Matej Danter
  */
-interface PointInterface {
-    public function __construct(CurveFp $curve, $x, $y, $order = null);
+interface PublicKeyInterface {
+    
+    public function __construct(Point $generator, Point $point);
 
-    public static function cmp($p1, $p2);
-
-    public static function add($p1, $p2);
-
-    public static function mul($x2, Point $p1);
-
-    public static function leftmost_bit($x);
-
-    public static function rmul(Point $p1, $m);
-
-    public function __toString();
-
-    public static function double(Point $p1);
-
-    public function getX();
-
-    public function getY();
+    public function verifies($hash, Signature $signature);
 
     public function getCurve();
 
-    public function getOrder();
+    public function getGenerator();
+
+    public function getPoint();
 
 }
 ?>

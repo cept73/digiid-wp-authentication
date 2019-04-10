@@ -21,24 +21,19 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 *************************************************************************/
 
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 /**
- * This is the contract for implementing CurveFp (EC prime finite-field).
+ * This is the contract for describing a signature used in ECDSA.
  *
  * @author Matej Danter
  */
-interface CurveFpInterface {
-        //constructor that sets up the instance variables
-        public function  __construct($prime, $a, $b);
+interface SignatureInterface {
+    public function __construct($r, $s);
 
-        public function contains($x,$y);
+    public function getR();
 
-        public function getA();
-
-        public function getB();
-
-        public function getPrime();
-
-        public static function cmp(CurveFp $cp1, CurveFp $cp2);
-
+    public function getS();
 }
 ?>
