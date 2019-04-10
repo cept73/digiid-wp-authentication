@@ -40,6 +40,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 					$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_userlink} WHERE address = %s", $data['adress']);
 					$user_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+					$digiid_success_but_not_connected = false;
 					if($user_row)
 					{
 						$query = $GLOBALS['wpdb']->delete($table_name_nonce, array('session_id' => $session_id));
@@ -67,16 +68,22 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 							else
 							{
 								$data['html'] = sprintf(__("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication') . " <strong>%s</strong>", $data['adress']);
+								$digiid_success_but_not_connected = true;
 							}
 						}
 					}
 					else
 					{
+						$digiid_success_but_not_connected = true;
+						$data['stop'] = 1;
+					}
+					
+					if ($digiid_success_but_not_connected)
+					{
 						$data['html'] = __("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication')
 							. " <a onclick=\"javascript:digiid_copyToClipboard('{$data['adress']}')\" title='Press for copy to clipboard'>"
 							. "<strong>{$data['adress']}</strong>"
 							. '</a>';
-						$data['stop'] = 1;
 					}
 				}
 				else
