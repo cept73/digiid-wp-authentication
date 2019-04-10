@@ -554,24 +554,24 @@ HTML_BLOCK;
 		wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css');
 		wp_add_inline_script('digiid_digiqr', <<<JS
 		function digiid_copyToClipboard (str) {
-		  const el = document.createElement('textarea');  // Create a <textarea> element
-		  el.value = str;                                 // Set its value to the string that you want copied
-		  el.setAttribute('readonly', '');                // Make it readonly to be tamper-proof
-		  el.style.position = 'absolute';                 
-		  el.style.left = '-9999px';                      // Move outside the screen to make it invisible
-		  document.body.appendChild(el);                  // Append the <textarea> element to the HTML document
-		  const selected =            
+		    const el = document.createElement('textarea');  // Create a <textarea> element
+		    el.value = str;                                 // Set its value to the string that you want copied
+		    el.setAttribute('readonly', '');                // Make it readonly to be tamper-proof
+		    el.style.position = 'absolute';                 
+		     el.style.left = '-9999px';                      // Move outside the screen to make it invisible
+		    document.body.appendChild(el);                  // Append the <textarea> element to the HTML document
+		     const selected =            
 			document.getSelection().rangeCount > 0        // Check if there is any content selected previously
 			  ? document.getSelection().getRangeAt(0)     // Store selection if found
 			  : false;                                    // Mark as false to know no selection existed before
-		  el.select();                                    // Select the <textarea> content
-		  document.execCommand('copy');                   // Copy - only works as a result of a user action (e.g. click events)
-		  document.body.removeChild(el);                  // Remove the <textarea> element
-		  if (selected) {                                 // If a selection existed before copying
+		    el.select();                                    // Select the <textarea> content
+		    document.execCommand('copy');                   // Copy - only works as a result of a user action (e.g. click events)
+		    document.body.removeChild(el);                  // Remove the <textarea> element
+		    if (selected) {                                 // If a selection existed before copying
 			document.getSelection().removeAllRanges();    // Unselect everything on the HTML document
 			document.getSelection().addRange(selected);   // Restore the original selection
-		  }
-		  return false;
+		    }
+		    return false;
 		};
 JS
 );
@@ -585,6 +585,8 @@ JS
 			<a href='{$url}'><img id="qr" alt='{$alt_text}' title='{$alt_text}'></a>
 		</div>
 
+</div>
+<div id='digiid_msg'>
 </div>
 
 HTML_BLOCK;
@@ -600,9 +602,11 @@ HTML_BLOCK;
 var digiid_timetologin = true;
 setTimeout("digiid_timetologin = false", 120000); // 2 min
 
-var digiid_interval_resource = setInterval(
-	function()
-	{
+var digiid_interval_resource = setInterval(refresh, 4000);
+refresh();
+
+function refresh ()
+{
 		if (!digiid_timetologin)
 		{
 			clearInterval(digiid_interval_resource);
@@ -633,7 +637,9 @@ var digiid_interval_resource = setInterval(
 
 					if(json.html > '')
 					{
-						document.getElementById('digiid').innerHTML = json.html;
+						el = document.getElementById('digiid_msg');
+						el.innerHTML = json.html;
+						el.classList.add ('message')
 
 						/*if (!document.getElementById('qr')) {
 							el = document.getElementById('digiid-or-pass');
@@ -661,9 +667,8 @@ var digiid_interval_resource = setInterval(
 				}
 			};
 		ajax.send();
-	},
-	4000
-);
+}
+
 JS_BLOCK;
 
 		//wp_add_inline_script('digiid_digiqr_intervals', $js);

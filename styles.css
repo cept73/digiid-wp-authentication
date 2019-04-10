@@ -28,3 +28,6 @@ body.login.login-action-login #digiid p.msg {
     padding: 5px 10px
 }
 
+#digiid_msg p.msg a {
+    cursor: grab;
+}
