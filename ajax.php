@@ -1,4 +1,11 @@
 <?php
+/**
+ * Runing from wp_ajax_nopriv_digiid action
+ */
+
+namespace DigiIdAuthentication;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 	$session_id = session_id();
 
@@ -18,7 +25,7 @@
 	if(!$nonce_row)
 	{
 		$data['status'] = -1;
-		$data['html'] = "<p>" . __("Error: The current session doesn't have a Digi-ID-nonce.", 'Digi-ID-Authentication') . "</p>";
+		$data['html'] = __("Error: The current session doesn't have a Digi-ID-nonce.", 'Digi-ID-Authentication');
 	}
 	else
 	{
@@ -39,7 +46,7 @@
 
 						if(is_user_logged_in())
 						{
-							$data['html'] = "<p>" . __("Allredy logged in", 'Digi-ID-Authentication') . "</p>";
+							$data['html'] = __("Allredy logged in", 'Digi-ID-Authentication');
 							$data['reload'] = 1;
 						}
 						else
@@ -51,7 +58,7 @@
 								wp_set_auth_cookie($user->ID);
 								do_action('wp_login', $user->user_login, $user);
 
-								$data['html'] = "<p>" . sprintf(__("Sucess, loged in as '%s'", 'Digi-ID-Authentication'), $user->user_login) . "</p>";
+								$data['html'] = sprintf(__("Sucess, loged in as", 'Digi-ID-Authentication') . " <strong>%s</strong>", $user->user_login);
 								$data['reload'] = 1;
 
 								$update_query = $GLOBALS['wpdb']->prepare("UPDATE {$table_name_userlink} SET pulse = NOW() WHERE address = %s", $data['adress']);
@@ -59,13 +66,17 @@
 							}
 							else
 							{
-								$data['html'] = "<p>" . sprintf(__("Digi-ID verification Sucess, but no useraccount connected to '%s'", 'Digi-ID-Authentication'), $data['adress']) . "</p>";
+								$data['html'] = sprintf(__("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication') . " <strong>%s</strong>", $data['adress']);
 							}
 						}
 					}
 					else
 					{
-						$data['html'] = "<p>" . sprintf(__("Digi-ID verification Sucess, but no useraccount connected to '%s'", 'Digi-ID-Authentication'), $data['adress']) . "</p>";
+						$data['html'] = __("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication')
+							. " <a onclick=\"javascript:digiid_copyToClipboard('{$data['adress']}')\" title='Press for copy to clipboard'>"
+							. "<strong>{$data['adress']}</strong>"
+							. '</a>';
+						$data['stop'] = 1;
 					}
 				}
 				else
@@ -79,11 +90,14 @@
 			default:
 			{
 				$data['status'] = -1;
-				$data['html'] = "<p>" . __("Unknown action: ", 'Digi-ID-Authentication') . $user_row['nonce_action'] . "</p>";
+				$data['html'] = __("Unknown action: ", 'Digi-ID-Authentication') . $user_row['nonce_action'];
 				break;
 			}
 		}
 	}
+
+	if (!empty($data['html']))
+		$data['html'] = '<p class="msg">' . $data['html'] . '</p>';
 
 	echo json_encode($data) . PHP_EOL;
 	die();
