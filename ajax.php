@@ -88,8 +88,6 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 							$data['adress'],
 							$data['adress']
 						);
-
-						$data['html'] = sprintf (NOUSERACCOUNT_MESSAGE, $data['adress']);
 					}
 				}
 				else
