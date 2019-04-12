@@ -1,7 +1,5 @@
 <?php
 /*
-Copyright 2014 Daniel Esteban
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -34,16 +32,6 @@ if (!class_exists('\DigiIdAuthentication\DigiID')) {
  */
 class DigiID
 {
-	private $_scheme = "digiid";
-	private $_qrservice = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=";
-
-	private $_nonce;
-	private $_callback;
-	private $_secure = TRUE;
-
-	private $_secp256k1;
-	private $_secp256k1_G;
-
 	public function __construct()
 	{
 		// curve definition
