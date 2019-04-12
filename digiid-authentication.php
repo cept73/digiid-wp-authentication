@@ -201,7 +201,7 @@ SQL_BLOCK;
 					wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
 					wp_add_inline_script('digiid_digiqr', 'document.getElementById("qr").src = DigiQR.id("'.$qr_url.'",250,3,0)');
 					//wp_add_inline_script('digiid_digiqr', 'setTimeout("window.location=\'' . admin_url('users.php?page=my-digiid') . '\'", 60000);');
-					wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css');
+					wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css?120419');
 
 					echo <<<HTML_BLOCK
 <form action='?page={$_REQUEST['page']}&action=add' method='post' id='digiid-addnew'>
@@ -215,7 +215,7 @@ SQL_BLOCK;
 				<a href='{$url}'><img id="qr" alt='{$alt_text}' title='{$alt_text}' style="display: block"></a>
 				<h2>{$label_title}:</h2>
 				<label>
-					<input type='text' name='address' value='{$default_address}' style='width: 400px; text-align: center' />
+					<input type='text' name='address' value='{$default_address}' style='width: 100%; max-width: 400px; text-align: center' />
 				</label>
 				<br />
 				<input type='submit' value='{$button_title}' />
