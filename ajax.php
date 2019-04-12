@@ -59,7 +59,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 								wp_set_auth_cookie($user->ID);
 								do_action('wp_login', $user->user_login, $user);
 
-								$data['html'] = sprintf(__("Sucess, loged in as", 'Digi-ID-Authentication') . " <strong>%s</strong>", $user->user_login);
+								$data['html'] = sprintf(__("Success, loged in as", 'Digi-ID-Authentication') . " <strong>%s</strong>", $user->user_login);
 								$data['reload'] = 1;
 
 								$update_query = $GLOBALS['wpdb']->prepare("UPDATE {$table_name_userlink} SET pulse = NOW() WHERE address = %s", $data['adress']);
@@ -67,7 +67,6 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 							}
 							else
 							{
-								$data['html'] = sprintf(__("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication') . " <strong>%s</strong>", $data['adress']);
 								$digiid_success_but_not_connected = true;
 							}
 						}
@@ -80,10 +79,17 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 					
 					if ($digiid_success_but_not_connected)
 					{
-						$data['html'] = __("Digi-ID verification Sucess, but no useraccount connected to", 'Digi-ID-Authentication')
-							. " <a onclick=\"javascript:digiid_copyToClipboard('{$data['adress']}')\" title='Press for copy to clipboard'>"
-							. "<strong>{$data['adress']}</strong>"
-							. '</a>';
+						$data['html'] = sprintf(
+							__("Digi-ID verification success, but no user account connected to", 'Digi-ID-Authentication')
+							. " <a onclick='javascript:digiid_copyToClipboard(\"%s\")' title='"
+							. __("Press for copy to clipboard", "Digi-ID-Authentication") . "'>"
+							. "<br /><strong>%s</strong></a>"
+							. "<br />" . __("You might add it in Settings - Digi-ID", 'Digi-ID-Authentication'),
+							$data['adress'],
+							$data['adress']
+						);
+
+						$data['html'] = sprintf (NOUSERACCOUNT_MESSAGE, $data['adress']);
 					}
 				}
 				else
