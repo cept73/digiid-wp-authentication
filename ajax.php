@@ -84,7 +84,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 							. " <a onclick='javascript:digiid_copyToClipboard(\"%s\")' title='"
 							. __("Press for copy to clipboard", "Digi-ID-Authentication") . "'>"
 							. "<br /><strong>%s</strong></a>"
-							. "<br />" . __("You might add it in Settings - Digi-ID", 'Digi-ID-Authentication'),
+							. "<br />" . __("You might add it in Users - Digi-ID", 'Digi-ID-Authentication'),
 							$data['adress'],
 							$data['adress']
 						);
