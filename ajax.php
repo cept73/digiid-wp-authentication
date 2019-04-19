@@ -81,10 +81,11 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 					{
 						$data['html'] = sprintf(
 							__("Digi-ID verification success, but no user account connected to", 'Digi-ID-Authentication')
-							. " <a onclick='javascript:digiid_copyToClipboard(\"%s\")' title='"
+							. " <a onclick='javascript:digiid_copyToClipboard(\"%s\");alert(\""
+							. __("Address copied to clipboard", "Digi-ID-Authentication") . "\")' title='"
 							. __("Press for copy to clipboard", "Digi-ID-Authentication") . "'>"
 							. "<br /><strong>%s</strong></a>"
-							. "<br />" . __("You might add it in Users - Digi-ID", 'Digi-ID-Authentication'),
+							. "<br />" . __("You might add it in <b>Users - Digi-ID</b>", 'Digi-ID-Authentication'),
 							$data['adress'],
 							$data['adress']
 						);

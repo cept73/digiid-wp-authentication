@@ -431,7 +431,7 @@ class DigiID
 		$error = array('status' => (int) $error_number, 'message' => (string) $error_message);
 		echo json_encode($error);
 
-// 		file_put_contents(dirname(__FILE__) . "/last_error.json", print_r(array('date' => date("Y-m-d H:i:s"), 'error' => $error, 'post' => $_POST, 'vars' => $GLOBALS['digiid_vars'], 'debug' => $debug_data), TRUE) . PHP_EOL);
+ 		//file_put_contents(dirname(__FILE__) . "/last_error.json", print_r(array('date' => date("Y-m-d H:i:s"), 'error' => $error, 'post' => $_POST, 'vars' => $GLOBALS['digiid_vars'], 'debug' => $debug_data), TRUE) . PHP_EOL);
 		die(PHP_EOL);
 	}
 
@@ -439,6 +439,8 @@ class DigiID
 	{
 		header(trim("HTTP/1.0 200 OK"));
 		echo json_encode(array('address' => (string) $address, 'nonce' => (string) $nonce));
+
+		//file_put_contents(dirname(__FILE__) . "/last_success.json", print_r(array('date' => date("Y-m-d H:i:s"), 'address' => $address, 'post' => $_POST, 'vars' => $GLOBALS['digiid_vars'], 'nonce' => $nonce), TRUE) . PHP_EOL);
 		die(PHP_EOL);
 	}
 }

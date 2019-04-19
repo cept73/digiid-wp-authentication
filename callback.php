@@ -5,10 +5,34 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 	$raw_post_data = file_get_contents('php://input');
+	require_once("required_classes.php");
 
-	$variables = array('address', 'signature', 'uri');
+	function digiid_import_data ($input)
+	{
+		$result = array ();
 
-	$post_data = array();
+		$variables = array('address'=>'string', 'signature'=>'string', 'uri'=>'string');
+		foreach($variables as $key => $type)
+		{
+			if(isset($input[$key]))
+			{
+				$raw_val = $input[$key];
+				$sanitized_val = '';
+				switch ($type) 
+				{
+					case 'string': 	$sanitized_val = sanitize_text_field($raw_val); break;
+					case 'url': 	$sanitized_val = esc_url_raw($raw_val); break;
+				}
+				$result[$key] = $sanitized_val;
+			}
+			else
+			{
+				$result[$key] = NULL;
+			}
+		}
+		return $result;
+	}
+
 
 	$json = NULL;
 	$uri = NULL;
@@ -21,35 +45,13 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 	if(substr($raw_post_data, 0, 1) == "{")
 	{
 		$json = json_decode($raw_post_data, TRUE);
-		foreach($variables as $key)
-		{
-			if(isset($json[$key]))
-			{
-				$post_data[$key] = (string) $json[$key];
-			}
-			else
-			{
-				$post_data[$key] = NULL;
-			}
-		}
+		$post_data = digiid_import_data ($json);
 	}
 	else
 	{
 		$json = FALSE;
-		foreach($variables as $key)
-		{
-			if(isset($_POST[$key]))
-			{
-				$post_data[$key] = (string) $_POST[$key];
-			}
-			else
-			{
-				$post_data[$key] = NULL;
-			}
-		}
+		$post_data = digiid_import_data ($_POST);
 	}
-
-	require_once("required_classes.php");
 
 	if(!array_filter($post_data))
 	{
@@ -61,7 +63,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 	if(!$nonce OR strlen($nonce) != 32)
 	{
-		DigiID::http_error(40, 'Bad nonce');
+		DigiID::http_error(40, 'Bad nonce' . json_encode($post_data));
 		die();
 	}
 
@@ -86,7 +88,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 	if($nonce_row AND $nonce_row['address'] AND $nonce_row['address'] != $post_data['address'])
 	{
-		DigiID::http_error(41, 'Bad or expired nonce');
+		DigiID::http_error(41, 'Bad or expired nonce' . $nonce_row['address'] . '!=' . $post_data['address']);
 		die();
 	}
 

@@ -153,7 +153,7 @@ SQL_BLOCK;
 				{
 					if(isset($_POST['address']))
 					{
-						$address = $_POST['address'];
+						$address = sanitize_text_field ($_POST['address']);
 						$default_address = $address;
 						$digiid = new DigiID();
 
@@ -186,7 +186,7 @@ SQL_BLOCK;
 					}
 					else
 					{
-						$default_address = (string) @$_REQUEST['address'];
+						$default_address = sanitize_text_field($_REQUEST['address']);
 					}
 
 					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
@@ -203,8 +203,11 @@ SQL_BLOCK;
 					//wp_add_inline_script('digiid_digiqr', 'setTimeout("window.location=\'' . admin_url('users.php?page=my-digiid') . '\'", 60000);');
 					wp_enqueue_style('digiid_digiqr', plugin_dir_url(__FILE__) . 'styles.css?120419');
 
+					$page = sanitize_text_field($_REQUEST['page']);
+					$url = esc_url (plugin_dir_url(__FILE__) . "?page=$page&action=add");
+
 					echo <<<HTML_BLOCK
-<form action='?page={$_REQUEST['page']}&action=add' method='post' id='digiid-addnew'>
+<form action='$url' method='post' id='digiid-addnew'>
 	<fieldset>
 		<legend style='font-size: larger;'>
 			<h2>{$legend_title}</h2>
@@ -237,28 +240,21 @@ HTML_BLOCK;
 					if(isset($_REQUEST['digiid_row']))
 					{
 						foreach($_REQUEST['digiid_row'] as $address)
-						{
-							$found_addresses[$address] = $address;
-						}
+							$found_addresses[$address] = sanitize_text_field($address);
 					}
 					else if(isset($_REQUEST['address']))
 					{
 						$address = $_REQUEST['address'];
-						$found_addresses[$address] = $address;
+						$found_addresses[$address] = sanitize_text_field($address);
 					}
 
 					if(!$found_addresses)
 					{
 						if($_POST)
-						{
 							echo digiid_admin_notice(__("Select some rows before asking to delete them", 'Digi-ID-Authentication'), 'error');
-							break;
-						}
 						else
-						{
 							echo digiid_admin_notice(sprintf(__("Missing paramater '%s'", 'Digi-ID-Authentication'), 'address'), 'error');
-							break;
-						}
+						break;
 					}
 
 					foreach($addresses as $current_adress)
@@ -351,7 +347,7 @@ HTML_BLOCK;
 				}
 				default:
 				{
-					echo digiid_admin_notice("Unknowed action: " . $_REQUEST['action'], 'error');
+					echo digiid_admin_notice("Unknowed action: " . sanitize_text_field($_REQUEST['action']), 'error');
 					break;
 				}
 			}
@@ -359,12 +355,14 @@ HTML_BLOCK;
 
 		$page_title = _x("My Digi-ID addresses", "page_title", 'Digi-ID-Authentication');
 		$add_link_title = __("Add New");
+		$page = sanitize_text_field($_REQUEST['page']); 
+		$url = esc_url("?page=$page&action=add");
 
 		echo <<<HTML_BLOCK
 <div class="wrap">
 	<h2>
 		<span>{$page_title}</span>
-		<a class="add-new-h2" href="?page={$_REQUEST['page']}&action=add">{$add_link_title}</a>
+		<a class="add-new-h2" href="$url">{$add_link_title}</a>
 	</h2>
 
 HTML_BLOCK;
@@ -428,11 +426,16 @@ HTML_BLOCK;
 
 			function column_address($item)
 			{
-				$action_template = '<a href="?page=%s&action=%s&address=%s">%s</a>';
 				$actions = array(
-					'delete'    => sprintf($action_template, $_REQUEST['page'], 'delete', $item['address'], __('Remove')),
+					'delete'    => sprintf(
+						'<a href="?page=%s&action=%s&address=%s">%s</a>', 
+						sanitize_text_field ($_REQUEST['page']), 
+						'delete', 
+						sanitize_text_field ($item['address']), 
+						__('Remove')
+					),
 				);
-				return $item['address'] . $this->row_actions($actions);
+				return sanitize_text_field ($item['address']) . $this->row_actions($actions);
 			}
 
 			function get_bulk_actions()
@@ -444,12 +447,15 @@ HTML_BLOCK;
 
 			function column_cb($item)
 			{
-				return sprintf('<input type="checkbox" name="digiid_row[]" value="%s" />', $item['address'] );
+				return sprintf(
+					'<input type="checkbox" name="digiid_row[]" value="%s" />', 
+					sanitize_text_field ($item['address']) );
 			}
 		}
 
+		$url = esc_url('?page=' . sanitize_text_field($_REQUEST['page']));
 		echo <<<HTML_BLOCK
-	<form action='?page={$_REQUEST['page']}' method='post'>
+	<form action='$url' method='post'>
 
 HTML_BLOCK;
 		$my_digiid_addresses = new my_digiid_addresses();
