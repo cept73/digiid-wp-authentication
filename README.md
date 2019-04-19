@@ -1,7 +1,7 @@
 Digi-ID Authentication
 ===
 
-Contributors: Sergey Taranov (cept), digicontributer
+Contributors: Taranov Sergey (cept), digicontributer
 
 Tags: Authentication
 
