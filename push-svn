@@ -1,0 +1,3 @@
+svn add assets classes *.php *.js *.css *.txt *.md
+cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.4
+cp -r assets ..
