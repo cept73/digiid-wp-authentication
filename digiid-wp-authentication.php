@@ -2,23 +2,23 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.4
+ * @version 1.0.5
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.4
+Version: 1.0.5
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
 
 namespace DigiIdAuthentication;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.4');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.5');
 
 	require_once ('required_classes.php');
 
-	register_activation_hook( __FILE__, 'digiid_install' );
+	register_activation_hook( __FILE__, '\DigiIdAuthentication\digiid_install' );
 
 	add_action( 'plugins_loaded', '\DigiIdAuthentication\digiid_update_db_check' );
 	add_action( 'login_enqueue_scripts', '\DigiIdAuthentication\digiid_login_script' );
