@@ -121,26 +121,53 @@ HTML;
 	function digiid_qr_html ()
 	{
 		$html = '';
-		$title = "Digi-ID login";
+		$title = 'Digi-ID login';
+		$action = 'login';
 
 		// Login / Register panel
 		if (get_option('users_can_register'))
 		{
+			$available_actions = array('login','register');
 
-		$available_actions = array('login','register');
+			if (!empty($_REQUEST['action']))
+			{
+				if (!in_array($_REQUEST['action'], $available_actions)) return $messages; 
+				$title = '';
+				$action = $_REQUEST['action'];
+			}
+			else
+			{
+				$action = 'login';
+			}
 
-		if (!empty($_REQUEST['action']))
-		{
-			if (!in_array($_REQUEST['action'], $available_actions)) return $messages; 
-			$title = '';
-			$action = $_REQUEST['action'];
+			$title = $action == 'login' ? "Digi-ID login" : "New Digi-ID user";
+
+			// Collect Login, Register buttons
+			$show_acts = array();
+			if (in_array('register', $available_actions))
+				$show_acts['register'] = array('caption' => 'Registration',	'url' => home_url('wp-login.php?action=register'));
+			if (in_array('login', $available_actions))
+				$show_acts['login'] =	 array('caption' => 'Login',		'url' => home_url('wp-login.php?action=login'));
+
+			// Current
+			if (isset($show_acts[ $action ]))
+			{
+				$params = $show_acts[ $action ];
+				$dialog_html = "<a class='button active' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
+				// Others
+				unset($show_acts[ $action ]);
+			}
+			// Others
+			foreach ($show_acts as $show_act => $params)
+				$dialog_html .= "<a class='button' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
+
+			$html .= <<<HTML
+			<div id="digiid_select_dialog">
+				$dialog_html
+			</div>
+HTML;
+
 		}
-		else
-		{
-			$action = 'login';
-		}
-
-		$title = $action == 'login' ? "Digi-ID login" : "New Digi-ID user";
 
 		$url = digiid_get_callback_url(NULL, $action);
 		if (!$url) {
@@ -148,33 +175,6 @@ HTML;
 		}
 		$alt_text = __("QR-code for Digi-ID", 'Digi-ID-Authentication');
 		$url_encoded_url = urlencode($url);
-
-		// Collect Login, Register buttons
-		$show_acts = array();
-		if (in_array('register', $available_actions))
-			$show_acts['register'] = array('caption' => 'Registration',	'url' => home_url('wp-login.php?action=register'));
-		if (in_array('login', $available_actions))
-			$show_acts['login'] =	 array('caption' => 'Login',		'url' => home_url('wp-login.php?action=login'));
-
-		// Current
-		if (isset($show_acts[ $action ]))
-		{
-			$params = $show_acts[ $action ];
-			$dialog_html = "<a class='button active' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
-			// Others
-			unset($show_acts[ $action ]);
-		}
-		// Others
-		foreach ($show_acts as $show_act => $params)
-			$dialog_html .= "<a class='button' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
-
-		$html .= <<<HTML
-		<div id="digiid_select_dialog">
-			$dialog_html
-		</div>
-HTML;
-
-		}
 
 		$title = '<h1>' . __($title, 'Digi-ID-Authentication') . '</h1>';
 
