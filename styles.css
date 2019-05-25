@@ -1,17 +1,33 @@
 
-body.login.login-action-login {
+body.login {
     cursor: default;
 }
 
-body.login.login-action-login #digiid {
-    background: white;
-    padding: 30px 0px;
-    margin-bottom: 20px;
+body.login #digiid_outer {
+    background: #FFFFFF;
+    background-position: center center;
+    background-size: cover;
+    /*padding: 24px 0px;
+    margin-bottom: 24px;*/
     box-shadow: 0 1px 3px rgba(0,0,0,.13);
 }
 
-body.login.login-action-login #digiid p.msg {
+body.login #digiid p.msg {
     text-align: center;
+}
+
+#digiid_io {
+    color: red;
+    vertical-align: top;
+    font-size: 80%;
+}
+
+#digiid a {
+    display: inline-block;
+}
+
+#digiid_msg p.msg a {
+    cursor: grab;
 }
 
 #digiid-addnew fieldset {
@@ -27,6 +43,92 @@ body.login.login-action-login #digiid p.msg {
     padding: 5px 10px
 }
 
-#digiid_msg p.msg a {
-    cursor: grab;
+#digiid_btn_showqr {
+    float: right;
 }
+    #digiid_btn_showqr a {
+        display: block;
+    }
+
+#digiid_addr {
+    float: left;
+    width: auto;
+    font-size: 10px;
+}
+
+#digiid {
+    text-align: center;
+}
+
+.login .message {
+    margin: 20px 0 0 0;
+}
+
+#digiid h1 {
+    color: black; /*#1975d1;*/
+}
+#digiid .know-more {
+    font-size: 15px;
+    color: #1975d1;
+}
+/*#digiid_qr img {
+    opacity: 1;
+    box-shadow: white 0px 0px 16px 2px;
+}*/
+
+#digiid_qr {
+    margin-top: 12px;
+}
+
+#digiid_progress_full, #digiid_progress_bar {
+    height: 10px;
+}
+#digiid_progress_full {
+    margin: 0;
+    background: linear-gradient(to left, #EEE 0%, #EEE 73%, #FF6666 100%);
+    border-radius: 10px 0 0px 10px
+}
+#digiid_progress_bar {
+    width: 100%;
+    border-radius: 20px;
+    float: left;
+    background: #1975d1;
+    transition: 1200ms linear;
+}
+
+#digiid_select_dialog {
+    /*text-align: center;*/
+}
+
+#digiid_select_dialog a {
+    /*border-radius: 3px 3px 0 0;
+    border-top: 0;*/
+}
+
+#digiid_select_dialog button {
+    padding: 0 15px 1px;
+    height: 26px;
+    padding: 0 10px 0;
+    border-bottom: 0;
+    margin-bottom: 0;
+}
+@media screen and (max-width: 782px) {
+    #digiid_select_dialog .button {
+        margin-bottom: 0;
+    }
+}
+
+#digiid_select_dialog .active {
+    color: black;
+    background: white;
+    text-shadow: none;
+    /*border-top\: 0;*/
+    border: none;
+    box-shadow: inset 0px 1px 1px -1px
+}
+
+/* Margin from Digi-ID block */
+#login_error {
+    margin-top: 20px
+}
+
