@@ -3,7 +3,7 @@ body.login {
     cursor: default;
 }
 
-body.login #digiid_outer {
+body #digiid_outer {
     background: #FFFFFF;
     background-position: center center;
     background-size: cover;
@@ -12,7 +12,7 @@ body.login #digiid_outer {
     box-shadow: 0 1px 3px rgba(0,0,0,.13);
 }
 
-body.login #digiid p.msg {
+body #digiid p.msg {
     text-align: center;
 }
 
@@ -60,7 +60,7 @@ body.login #digiid p.msg {
     text-align: center;
 }
 
-.login .message {
+#login .message {
     margin: 20px 0 0 0;
 }
 

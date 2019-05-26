@@ -14,21 +14,38 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 		$session_id = session_id();
 	}
 
-		//TEST
-		$fp = fopen('test.log', 'at');
-		fwrite($fp, json_encode($_SESSION));
-		fclose($fp);
-	
 	$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
 	$table_name_userlink = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
-	$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE session_id = %s AND address is not null", $session_id);
-	$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+
+	function digiid_login($user)
+	{
+		wp_set_current_user($user->ID, $user->user_login);
+		wp_set_auth_cookie($user->ID);
+		do_action('wp_login', $user->user_login, $user);
+	}
 
 	$data = array();
+
+	// Есть запись?
+	$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE session_id = %s", $session_id);
+	$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+	if (!$nonce_row)
+	{
+		$data['status'] = -1;
+		$data['reload'] = 1;
+
+		print json_encode($data);
+		die();
+	}
+
+	// Есть запись но адрес уже вписан?
+	$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE session_id = %s AND address is not null", $session_id);
+	$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
 
 	if (!$nonce_row)
 	{
 		$data['status'] = 0;
+		$data['reload'] = 0;
 		//$data['html'] = __("Error: The current session doesn't have a Digi-ID-nonce.", 'Digi-ID-Authentication');
 	}
 	else
@@ -51,17 +68,15 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
 						if(is_user_logged_in())
 						{
-							$data['html'] = __("Allredy logged in", 'Digi-ID-Authentication');
-							$data['reload'] = 1;
+							$data['html'] = __("Already logged in", 'Digi-ID-Authentication');
+							//$data['reload'] = 1;
 						}
 						else
 						{
-							$user = get_user_by( 'id', $user_row['user_id'] );
+							$user = get_user_by ('id', $user_row['user_id']);
 							if($user)
 							{
-								wp_set_current_user($user->ID, $user->user_login);
-								wp_set_auth_cookie($user->ID);
-								do_action('wp_login', $user->user_login, $user);
+								digiid_login($user);
 
 								$data['html'] = sprintf(__("Success, loged in as", 'Digi-ID-Authentication') . " <strong>%s</strong>", $user->user_login);
 								$data['reload'] = 1;
@@ -134,7 +149,7 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 					$data['address'] = $nonce_row['address'];
 
 					// Remove all old records
-					$GLOBALS['wpdb']->delete($table_name_nonce, array('address' => $data['address']));
+					$GLOBALS['wpdb']->delete($table_name_nonce, array('address' => $nonce_row['address']));
 				}
 				else
 					$data['status'] = 0;

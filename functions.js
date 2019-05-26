@@ -57,7 +57,8 @@ function digiid_qr_change_visibility(new_state = null)
         }
 
         // Hide progress
-        document.getElementById('digiid_progress_full').style.display = 'none'
+        el = document.getElementById('digiid_progress_full')
+        if (el) el.style.display = 'none'
     }
     else
     {
@@ -71,7 +72,8 @@ function digiid_qr_change_visibility(new_state = null)
         if (registerform) registerform.style['margin-top'] = ''
 
         // Show progress
-        document.getElementById('digiid_progress_full').style.display = ''
+        el = document.getElementById('digiid_progress_full')
+        if (el) el.style.display = ''
     }
 }
 
@@ -144,7 +146,8 @@ function digiid_tick(max)
         delete(digiid_timers['tick']);
     }
 
-    document.getElementById('digiid_progress_bar').style.width = (100-procents) + '%';
+    bar = document.getElementById('digiid_progress_bar');
+    if (bar) bar.style.width = (100-procents) + '%';
 }
 
 
@@ -215,6 +218,11 @@ function digiid_after_ajax (action, json)
         return;
     }
 
+    // Add
+    if (action == 'add') 
+    {
+    }
+
     // Login
     if(json.html > '')
     {
@@ -234,13 +242,13 @@ function digiid_after_ajax (action, json)
     if(json.reload > 0)
     {
         var redirect = document.getElementsByName("redirect_to");
-        if(redirect && redirect[0].value > '')
+        if(redirect && redirect[0] && redirect[0].value > '')
         {
             window.location.href = redirect[0].value;
         }
         else
         {
-            window.location.href = "wp-admin/";
+            window.location.href = window.location.href;
         }
     }
 }

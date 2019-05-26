@@ -2,12 +2,12 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.7
+ * @version 1.0.8
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.7
+Version: 1.0.8
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
@@ -29,6 +29,7 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.7');
 	add_action( 'admin_menu', '\DigiIdAuthentication\digiid_menu' );
 	add_action( 'template_redirect', '\DigiIdAuthentication\digiid_callback_test' );
 	add_action( 'wp_ajax_nopriv_digiid', '\DigiIdAuthentication\digiid_ajax' );
+	add_action( 'wp_ajax_digiid', '\DigiIdAuthentication\digiid_ajax' );
 
 
 	// Login form
@@ -55,7 +56,7 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.7');
 
 
 	/* Init */
-	function digiid_init()
+	function digiid_init($action = null)
 	{
 		// Global require
 		wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
@@ -63,14 +64,17 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.7');
 		wp_enqueue_style('digiid_custom_css', plugin_dir_url(__FILE__) . 'styles.css?190519_1336');
 
 		// JS init
-		$action = (isset($_REQUEST) && $_REQUEST['action'] == 'register') ? 'register' : 'login';
+		if (!$action)
+			$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : 'login';
+
 		$ajax_url = admin_url('admin-ajax.php?action=digiid');
 		$url = digiid_get_callback_url(NULL, $action);
 		$js = <<<JS
         window.onload = function() {
 			digiid_config = {'action': '$action', 'ajax_url': '$ajax_url'};
 			digiid_qr_change_visibility();
-			document.querySelector('#digiid_qr img').src = DigiQR.id('$url', 200, 3, 0);
+			el = document.querySelector('#digiid_qr img')
+			if (el) el.src = DigiQR.id('$url', 200, 3, 0);
 		};
 JS;
 		$js = str_replace("\t","", $js);
@@ -118,20 +122,35 @@ HTML;
 	}
 
 
-	function digiid_qr_html ()
+	function digiid_qr_html ($force_action = null)
 	{
 		$html = '';
+
+		// Default
 		$title = 'Digi-ID login';
 		$action = 'login';
+		$titles = array(
+			'login' => "Digi-ID login",
+			'register' => "New Digi-ID user",
+			'add' => "Add Digi-ID"
+		);
+
+		// Forced action specified
+		if ($force_action != null)
+		{
+			$action = $force_action;
+		}
 
 		// Login / Register panel
-		if (get_option('users_can_register'))
+		elseif (get_option('users_can_register'))
 		{
 			$available_actions = array('login','register');
 
 			if (!empty($_REQUEST['action']))
 			{
-				if (!in_array($_REQUEST['action'], $available_actions)) return $messages; 
+				if (!in_array($_REQUEST['action'], $available_actions)) {
+					return $messages;
+				} 
 				$title = '';
 				$action = $_REQUEST['action'];
 			}
@@ -139,8 +158,6 @@ HTML;
 			{
 				$action = 'login';
 			}
-
-			$title = $action == 'login' ? "Digi-ID login" : "New Digi-ID user";
 
 			// Collect Login, Register buttons
 			$show_acts = array();
@@ -176,6 +193,7 @@ HTML;
 		$alt_text = __("QR-code for Digi-ID", 'Digi-ID-Authentication');
 		$url_encoded_url = urlencode($url);
 
+		if (isset($titles[$action])) $title = $titles[$action];
 		$title = '<h1>' . __($title, 'Digi-ID-Authentication') . '</h1>';
 
 		// Show block
@@ -243,6 +261,8 @@ HTML;
 			$userlink_row['birth'] = current_time('mysql');
 			$GLOBALS['wpdb']->insert( $table_name_userlink, $userlink_row );
 		}
+
+
 
 		// Forget about data
 		digiid_exit();
@@ -332,6 +352,8 @@ SQL;
 		$user_id = get_current_user_id();
 		if(!$user_id) return;
 
+		//$_SESSION['digiid_wp_user_id'] = 
+
 		$addresses = digiid_list_users_addresses($user_id);
 		$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
 
@@ -340,6 +362,8 @@ SQL;
 			$action = $_REQUEST['action2'];
 		if(isset($_REQUEST['action']) && $_REQUEST['action'] != '' && $_REQUEST['action'] != -1)
 			$action = $_REQUEST['action'];
+
+		digiid_init('add');
 
 		if($action)
 		{
@@ -376,7 +400,8 @@ SQL;
 					else
 						$default_address = sanitize_text_field($_REQUEST['address']);
 
-					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
+
+/*					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
 					$label_scan = _x("Scan it till 'Digi-ID success'", 'label_scan', 'Digi-ID-Authentication');
 					$label_title = _x("or specify here", 'input_title', 'Digi-ID-Authentication');
 					$button_title = _x("Link to my account", 'button', 'Digi-ID-Authentication');
@@ -394,10 +419,10 @@ SQL;
 		<legend style='font-size: larger;'>
 			<h2>{$legend_title}</h2>
 		</legend>
-		<div class='fieldset_content'>
+		<div class='fieldset_content' id="digiid_qr">
 			<center>
 				<h2>{$label_scan}:</h2>
-				<a href='{$url}'><img id="qr" alt='{$alt_text}' title='{$alt_text}' width='200px' height='200px' style="display: block"></a>
+				<a href='{$qr_url}'><img alt='{$alt_text}' title='{$alt_text}' width='200px' height='200px' style="display: block"></a>
 				<h2>{$label_title}:</h2>
 				<label>
 					<input type='text' name='address' value='{$default_address}' style='width: 100%; max-width: 400px; text-align: center' />
@@ -408,7 +433,17 @@ SQL;
 		</div>
 	</fieldset>
 </form>
+HTML;*/
+
+					$page = sanitize_text_field($_REQUEST['page']); 
+					$back_url = esc_url("?page=$page");
+
+					echo <<<HTML
+<div style='width: 320px; margin-top: 20px'>
+<input type='hidden' name='redirect_to' value='$back_url'>
 HTML;
+					echo digiid_qr_html('add');
+					echo "</div>";
 					break;
 				}
 
@@ -664,9 +699,9 @@ HTML_BLOCK;
 		$nonce_row['session_id'] = $digiid_session_id;
 		$nonce_row['birth'] = current_time('mysql');
 
-		/*$user_id = get_current_user_id();
+		$user_id = get_current_user_id();
 		if($user_id)
-			$nonce_row['user_id'] = $user_id;*/
+			$nonce_row['user_id'] = $user_id;
 
 		$db_result = $GLOBALS['wpdb']->insert( $table_name_nonce, $nonce_row );
 		if($db_result)
