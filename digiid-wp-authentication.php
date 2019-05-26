@@ -14,7 +14,7 @@ Author URI: http://github.com/cept73
 
 namespace DigiIdAuthentication;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.7');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.8');
 
 	require_once ('required_classes.php');
 
