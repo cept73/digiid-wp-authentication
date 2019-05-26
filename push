@@ -6,7 +6,7 @@
 
 # Do zip
 rm digiid-wp-authentication.zip
-zip digiid-wp-authentication *.php *.js *.css *.jpg *.png *.txt *.md classes/*.php assets/*.png
+zip digiid-wp-authentication *.php *.js *.css *.jpg *.png *.txt *.md classes/*.php assets/*.png assets/*.jpg
 echo "Zipped to module"
 
 # Require params if we want to push it to repository

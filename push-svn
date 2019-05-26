@@ -1,4 +1,4 @@
 svn add assets classes *.php *.js *.css *.txt *.md
-mkdir ../tags/1.0.7
-cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.7
+mkdir ../tags/1.0.8
+cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.8
 cp -r assets ..
