@@ -5,13 +5,14 @@ Contributors: Taranov Sergey (cept), digicontributer
 Tags: Authentication Digibyte Digi-ID digiid
 Requires at least: 3.0.1
 Tested up to: 5.2.1
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: MIT License
 License URI: https://opensource.org/licenses/MIT
 
-Plugin extends default Wordpress authentication with the Digi-ID protocol.
+Plugin extends default Wordpress and WooCommerce authentication with the Digi-ID protocol.
 User might one time open Users->Digi-ID and scan QR from his DigiByte App to have
 ability to log in throw QR without login and password.
+Consumers might do same with their WooCommerce accounts.
 Requires "GMP PHP extension" (php-gmp module).
 
 Frequently Asked Questions

@@ -3,34 +3,32 @@ body.login {
     cursor: default;
 }
 
-body #digiid_outer {
+body .digiid_outer {
     background: #FFFFFF;
     background-position: center center;
     background-size: cover;
-    /*padding: 24px 0px;
-    margin-bottom: 24px;*/
-    box-shadow: 0 1px 3px rgba(0,0,0,.13);
+    box-shadow: 0 1px 3px rgba(0,0,0,.33);
 }
 
-body #digiid p.msg {
+body .digiid p.msg {
     text-align: center;
 }
 
-#digiid_io {
+.digiid_io {
     color: red;
     vertical-align: top;
     font-size: 80%;
 }
 
-#digiid a {
+.digiid a {
     display: inline-block;
 }
 
-#digiid_msg p.msg a {
+.digiid_msg p.msg a {
     cursor: grab;
 }
 
-#digiid-addnew fieldset {
+.digiid-addnew fieldset {
     padding: 10px 10px 30px 10px;
     margin: 10px;
     background: white;
@@ -38,25 +36,25 @@ body #digiid p.msg {
     box-shadow: 0 1px 3px rgba(0,0,0,.13);
 }
 
-#digiid-addnew legend h2 {
+.digiid-addnew legend h2 {
     background: white;
     padding: 5px 10px
 }
 
-#digiid_btn_showqr {
+.digiid_btn_showqr {
     float: right;
 }
-    #digiid_btn_showqr a {
+    .digiid_btn_showqr a {
         display: block;
     }
 
-#digiid_addr {
+.digiid_addr {
     float: left;
-    width: auto;
-    font-size: 10px;
+    width: auto!important;
+    font-size: 10px!important;
 }
 
-#digiid {
+.digiid {
     text-align: center;
 }
 
@@ -64,31 +62,31 @@ body #digiid p.msg {
     margin: 20px 0 0 0;
 }
 
-#digiid h1 {
+.digiid h1 {
     color: black; /*#1975d1;*/
 }
-#digiid .know-more {
+.digiid .know-more {
     font-size: 15px;
     color: #1975d1;
 }
-/*#digiid_qr img {
-    opacity: 1;
-    box-shadow: white 0px 0px 16px 2px;
-}*/
 
-#digiid_qr {
+.digiid_qr_outer {
+    padding: 24px 24px 20px 24px;
+    text-align: center;
+}
+.digiid_qr {
     margin-top: 12px;
 }
 
-#digiid_progress_full, #digiid_progress_bar {
+.digiid_progress_full, .digiid_progress_bar {
     height: 10px;
 }
-#digiid_progress_full {
+.digiid_progress_full {
     margin: 0;
     background: linear-gradient(to left, #EEE 0%, #EEE 73%, #FF6666 100%);
     border-radius: 10px 0 0px 10px
 }
-#digiid_progress_bar {
+.digiid_progress_bar {
     width: 100%;
     border-radius: 20px;
     float: left;
@@ -96,16 +94,7 @@ body #digiid p.msg {
     transition: 1200ms linear;
 }
 
-#digiid_select_dialog {
-    /*text-align: center;*/
-}
-
-#digiid_select_dialog a {
-    /*border-radius: 3px 3px 0 0;
-    border-top: 0;*/
-}
-
-#digiid_select_dialog button {
+.digiid_select_dialog button {
     padding: 0 15px 1px;
     height: 26px;
     padding: 0 10px 0;
@@ -113,18 +102,40 @@ body #digiid p.msg {
     margin-bottom: 0;
 }
 @media screen and (max-width: 782px) {
-    #digiid_select_dialog .button {
+    .digiid_select_dialog .button {
         margin-bottom: 0;
     }
 }
 
-#digiid_select_dialog .active {
+.digiid_select_dialog .active {
     color: black;
     background: white;
     text-shadow: none;
-    /*border-top\: 0;*/
     border: none;
     box-shadow: inset 0px 1px 1px -1px
+}
+
+.digiid_outer.timeout {
+    background: white url(assets/show-qr.png?1);
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    cursor: hand;
+    box-shadow: none;
+}
+.digiid_outer.qr_completed {
+    background: white url(assets/completed-qr.png);
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    cursor: none;
+    box-shadow: none;
+}
+.digiid_outer.timeout .digiid, .digiid_outer.qr_completed .digiid {
+    opacity: 0.08
+}
+.digiid_shortcode .digiid_qr {
+    margin-top: 0
 }
 
 /* Margin from Digi-ID block */
@@ -132,3 +143,67 @@ body #digiid p.msg {
     margin-top: 20px
 }
 
+/* /my-account */
+.digiid_wc {
+    width: 280px;
+    float: left;
+    margin-right: 50px;
+    margin-bottom: 30px;
+}
+p.know-more {
+    margin-bottom: 0;
+}
+/*.digiid_wc ~ div {
+    display: block !important
+}*/
+li.woocommerce-MyAccount-navigation-link--digiid a::before {
+    content: "\f029" !important;
+}
+
+/* Digi-ID authorization */
+.digiid_wc_myaccount {
+    width: 100%;
+    padding: 0 33%;
+    margin-bottom: 40px;
+    display: inline-flex;
+}
+.digiid_wc_myaccount #digiid_select_dialog {
+    display: none;
+}
+.digiid_wc_myaccount .digiid_qr_outer h1 {
+    display: none;
+}
+
+.digiid_shortcode .digiid_outer {
+    /* Short code fix */
+    box-shadow: none;
+}
+.digiid_shortcode .digiid_qr_outer {
+    padding: 0;
+}
+
+/* No outline */
+.digiid_qr a:focus {
+    outline: none;
+}
+
+/* Long text must be shown in input */
+form.woocommerce-form-register #digiid_addr {
+    font-size: 95% !important;
+    padding: 11px 10px;
+}
+
+/* For highlight effect */
+.digiid_highlight {
+    /*box-shadow: 0px 0px 4px 2px green !important; 
+    /* for blue: #1975d1 */
+    background: #1975d177 !important;
+    /*color: white !important;*/
+}
+
+.digiid_error {
+    color: red;
+    border: 1px solid;
+    padding: 0 5px;
+    font-size: 14px;  
+}

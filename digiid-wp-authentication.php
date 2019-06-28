@@ -2,26 +2,26 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.8
+ * @version 1.0.9
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.8
+Version: 1.0.9
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
 
 namespace DigiIdAuthentication;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.8');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.9');
+
 
 	require_once ('required_classes.php');
 
 	register_activation_hook( __FILE__, '\DigiIdAuthentication\digiid_install' );
 
-
-	//add_action( 'init', '\DigiIdAuthentication\digiid_init');
+	add_action( 'admin_init', '\DigiIdAuthentication\digiid_dashboard_admin_access' );
 	add_action( 'plugins_loaded', '\DigiIdAuthentication\digiid_update_db_check' );
 	add_action( 'plugins_loaded', '\DigiIdAuthentication\digiid_load_translation' );
 	add_action( 'login_enqueue_scripts', '\DigiIdAuthentication\digiid_login_script' );
@@ -30,7 +30,6 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.8');
 	add_action( 'template_redirect', '\DigiIdAuthentication\digiid_callback_test' );
 	add_action( 'wp_ajax_nopriv_digiid', '\DigiIdAuthentication\digiid_ajax' );
 	add_action( 'wp_ajax_digiid', '\DigiIdAuthentication\digiid_ajax' );
-
 
 	// Login form
 	add_filter( 'login_message', '\DigiIdAuthentication\digiid_login_header' );
@@ -54,35 +53,90 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.8');
 		$digiid_session_id = session_id();
 	}
 
+	// Woocommerce on?
+	$woocommerce_is_activated = in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')));
 
-	/* Init */
+
+
+	// Global table names
+	$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
+	$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
+	$table_name_users = "{$GLOBALS['wpdb']->prefix}users";
+
+
+	// Deny access to admin panel for customers
+	function digiid_dashboard_admin_access() {
+		global $current_user;
+		$redirect = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url( '/' );
+		$user_roles = $current_user->roles;
+		$user_role = array_shift($user_roles);
+		if ($user_role === 'Customer')
+		{
+			exit(wp_redirect($redirect));
+		}
+	}
+
+
+	/* Initializing. Used after QR generation! */
 	function digiid_init($action = null)
 	{
 		// Global require
-		wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
-		wp_enqueue_script('digiid_custom_js', plugin_dir_url(__FILE__) . 'functions.js?190519_1336');
-		wp_enqueue_style('digiid_custom_css', plugin_dir_url(__FILE__) . 'styles.css?190519_1336');
+		if (!defined('DIGIID_AUTHENTICATION_INIT')) {
+			// Run only once
+			wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
+			wp_enqueue_script('digiid_custom_js', plugin_dir_url(__FILE__) . 'functions.js?14', array('jquery'));
+			wp_enqueue_style('digiid_custom_css', plugin_dir_url(__FILE__) . 'styles.css?14');
+			wp_add_inline_script('digiid_custom_js', "digiid_base_ajax = '".admin_url('admin-ajax.php?action=digiid')."'");
+
+			DEFINE("DIGIID_AUTHENTICATION_INIT", true);
+		}
+
+		// Get just created object id
+		$id = digiid_qr_last_id();
 
 		// JS init
 		if (!$action)
 			$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : 'login';
 
-		$ajax_url = admin_url('admin-ajax.php?action=digiid');
+		// Autodetect
+		$start_state = '';
+		// Usual login, but hidden by default
+		if ($action == 'wc-login-widget') {
+			$start_state = 'hide';
+			$action = 'wc-login';
+		}
+
+		$ajax_url = admin_url('admin-ajax.php?action=digiid&type=' . $action);
 		$url = digiid_get_callback_url(NULL, $action);
+
 		$js = <<<JS
-        window.onload = function() {
-			digiid_config = {'action': '$action', 'ajax_url': '$ajax_url'};
-			digiid_qr_change_visibility();
-			el = document.querySelector('#digiid_qr img')
-			if (el) el.src = DigiQR.id('$url', 200, 3, 0);
-		};
+        jQuery(function() {
+			let obj_name = '$id';
+			digiid_config[obj_name] = {'action': '$action', 'ajax_url': '$ajax_url'};
+			digiid_qr_change_visibility(obj_name, '$start_state');
+			jQuery('#'+obj_name+' .digiid_qr img').attr('src', DigiQR.id('$url', 200, 3, 0));
+			return true;
+		});
 JS;
 		$js = str_replace("\t","", $js);
-		//$js = str_replace("\n","", $js);
 		wp_add_inline_script('digiid_custom_js', $js);
-	
 	}
 
+
+	function digiid_get_template($filename, $variables)
+	{
+		// Extract variables
+		extract ($variables);
+
+		// Collect HTML to variable
+		ob_start();
+		require "template/$filename";
+		$html = ob_get_contents();
+		ob_end_clean();
+
+		// Return output
+		return $html;
+	}
 
 
 	/* REGISTER FORM */
@@ -98,42 +152,52 @@ JS;
 		$button_showqr = __('Show QR for scan', 'Digi-ID-Authentication');
 		$addr =  esc_attr(wp_unslash($digiid_addr));
 		$dir = plugin_dir_url(__FILE__);
-		$qr_html = '';//digiid_qr_html();
-		echo <<<HTML
-			<div style="width:100%">
-				<label for="digiid_addr">$label</label>
 
-				<div style="clear:both"></div>
-
-				<input type="text" name="digiid_addr" id="digiid_addr" class="input" placeholder="$addr_placeholder"
-					value="$addr" size="37" 
-					onchange="javascript: digiid_qr_change_visibility()" />
-				<span id="digiid_btn_showqr" style="display: hidden">
-					<a href="javascript:;" title="$button_showqr" onclick="javascript: digiid_clear_qr()">
-						<img src="{$dir}/assets/qr-64x64.jpg" width="28px"><!-- scan-qr-64x64.png -->
-					</a>
-				</span>
-
-				$qr_html
-			</div>
-
-			<div style="clear:both"></div>
-HTML;
+		$js = <<<JS
+		jQuery(function() {
+			digiid_on_change_reg_input_addr();
+		});
+JS;
+		$js = str_replace("\t","", $js);
+		wp_add_inline_script('digiid_custom_js', $js);
+	
+		// Collect HTML
+		echo digiid_get_template('register_form.html', compact('label', 'addr_placeholder', 'addr', 'button_showqr', 'dir'));
 	}
 
 
-	function digiid_qr_html ($force_action = null)
+	$digiid_html_code_id = 0;
+	function digiid_qr_last_id()
 	{
-		$html = '';
+		global $digiid_html_code_id;
+		return 'digiid_' . $digiid_html_code_id;
+	}
+
+
+	function digiid_qr_html($force_action = null)
+	{
+		global $digiid_html_code_id;
+		// If one on screen ON
+		// if (defined("DIGIID_QR_GENERATED")) return '';
+		// define("DIGIID_QR_GENERATED", true);
 
 		// Default
 		$title = 'Digi-ID login';
 		$action = 'login';
 		$titles = array(
+			// /wp-admin
 			'login' => "Digi-ID login",
-			'register' => "New Digi-ID user",
-			'add' => "Add Digi-ID"
+			'register' => "", //New Digi-ID user",
+			'add' => "Add Digi-ID",
+			// /my-account
+			'wc-login' => ''
 		);
+		$html = '';
+		$dialog_tabs_html = '';
+
+		// Give each block unique ID
+		$digiid_html_code_id ++;
+		$unique_id = digiid_qr_last_id();
 
 		// Forced action specified
 		if ($force_action != null)
@@ -142,9 +206,13 @@ HTML;
 		}
 
 		// Login / Register panel
-		elseif (get_option('users_can_register'))
+		else
 		{
-			$available_actions = array('login','register');
+			$user_can_register = get_option('users_can_register');
+			if (!$user_can_register)
+				$available_actions = array('login');
+			else
+				$available_actions = array('login','register');
 
 			if (!empty($_REQUEST['action']))
 			{
@@ -164,25 +232,32 @@ HTML;
 			if (in_array('register', $available_actions))
 				$show_acts['register'] = array('caption' => 'Registration',	'url' => home_url('wp-login.php?action=register'));
 			if (in_array('login', $available_actions))
-				$show_acts['login'] =	 array('caption' => 'Login',		'url' => home_url('wp-login.php?action=login'));
+				$show_acts['login'] = array('caption' => 'Login', 'url' => home_url('wp-login.php?action=login'));
 
-			// Current
-			if (isset($show_acts[ $action ]))
-			{
-				$params = $show_acts[ $action ];
-				$dialog_html = "<a class='button active' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
+			if (count($show_acts) > 1) {
+			
+				// Current
+				if (isset($show_acts[ $action ]))
+				{
+					$params = $show_acts[ $action ];
+					$dialog_tabs_html = "<a class='button active' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
+					// Others
+					unset($show_acts[ $action ]);
+				}
 				// Others
-				unset($show_acts[ $action ]);
-			}
-			// Others
-			foreach ($show_acts as $show_act => $params)
-				$dialog_html .= "<a class='button' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
-
-			$html .= <<<HTML
+				foreach ($show_acts as $show_act => $params)
+				$dialog_tabs_html .= "<a class='button' href='" . esc_url($params['url']) . "'>{$params['caption']}</a>";
+				
+				$dialog_tabs_html = <<<HTML
 			<div id="digiid_select_dialog">
-				$dialog_html
+				$dialog_tabs_html
 			</div>
 HTML;
+
+			}
+			else {
+				$dialog_tabs_html = '';
+			}
 
 		}
 
@@ -194,35 +269,17 @@ HTML;
 		$url_encoded_url = urlencode($url);
 
 		if (isset($titles[$action])) $title = $titles[$action];
-		$title = '<h1>' . __($title, 'Digi-ID-Authentication') . '</h1>';
+		if (!empty($title)) $title = '<h1>' . __($title, 'Digi-ID-Authentication') . '</h1>';
 
 		// Show block
-		$html .= <<<HTML
-		<div id='digiid_outer'>
-			<div id='digiid' style='display:none'>
-				<div style="padding: 24px">
-					{$title}
-					<div id="digiid_qr">
-						<a href='$url'><img alt='$alt_text' title='$alt_text'></a>
-					</div>
-					<p class="know-more">To know more: <a href="https://www.digi-id.io" target="__blank">digi-id.io</a></p>
-				</div>
-				<div id='digiid_progress_full'>
-					<div id='digiid_progress_bar'>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div id='digiid_msg'></div>
-
-HTML;
-
-		return $html;
+		return digiid_get_template('qr.html', compact('dialog_tabs_html', 'title', 'url', 'alt_text', 'alt_text', 'unique_id'));
 	}
 
 
 	/* Custom field validation */
 	function digiid_unique_check ( $errors, $sanitized_user_login, $user_email ) {
+		global $table_name_links;
+
 		if (empty($_POST['digiid_addr'])) 
 			return $errors;
 
@@ -235,8 +292,7 @@ HTML;
 			return $errors;
 		}*/
 		
-		$table_name_userlink = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
-		$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_userlink} WHERE address = %s", $address);
+		$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_links} WHERE address = %s", $address);
 		$info = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
 		if (!empty($info)) 
 		{
@@ -249,17 +305,16 @@ HTML;
 
 	/* After registration - store custom val and clear session */
 	function digiid_register_after( $user_id ) {
+		global $table_name_links;
+
 		if (!empty($_POST['digiid_addr']))
 		{
-			// We will store record about users Digi-ID in this table
-			$table_name_userlink = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
-
 			// Fill the line and insert
 			$userlink_row = array();
 			$userlink_row['user_id'] = $user_id;
 			$userlink_row['address'] = $_POST['digiid_addr'];
 			$userlink_row['birth'] = current_time('mysql');
-			$GLOBALS['wpdb']->insert( $table_name_userlink, $userlink_row );
+			$GLOBALS['wpdb']->insert( $table_name_links, $userlink_row );
 		}
 
 
@@ -274,16 +329,14 @@ HTML;
 	/* Check version on load */
 	function digiid_update_db_check()
 	{
-		if(get_site_option( "digiid_plugin_version") !=  DIGIID_AUTHENTICATION_PLUGIN_VERSION )
+		if (get_site_option( "digiid_plugin_version") !=  DIGIID_AUTHENTICATION_PLUGIN_VERSION )
 			digiid_install();
 	}
 
 	/* Install plugin, add all tables or modifications */
 	function digiid_install()
 	{
-		$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
-		$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
-		$table_name_users = "{$GLOBALS['wpdb']->prefix}users";
+		global $table_name_nonce, $table_name_links, $table_name_users;
 
 		// Detect current engine, use the same
 		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$GLOBALS['wpdb']->prefix}users'";
@@ -315,7 +368,7 @@ CREATE TABLE {$table_name_links} (
 	PRIMARY KEY (address),
 	KEY (user_id),
 	KEY (birth),
-	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID)
+	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID) ON UPDATE CASCADE ON DELETE CASCADE 
 )
 ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
@@ -341,31 +394,22 @@ SQL;
 		);
 	}
 
-	function digiid_option_page()
-	{
-		echo "<h1>digiid_option_page</h1>";
-		return "<h2>digiid_option_page()</h2>";
-	}
-
 	function digiid_my_option_page()
 	{
-		$user_id = get_current_user_id();
-		if(!$user_id) return;
+		global $table_name_links;
 
-		//$_SESSION['digiid_wp_user_id'] = 
+		$user_id = get_current_user_id();
+		if (!$user_id) return;
 
 		$addresses = digiid_list_users_addresses($user_id);
-		$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
 
 		$action = "";
-		if(isset($_REQUEST['action2']) && $_REQUEST['action2'] != '' && $_REQUEST['action2'] != -1)
+		if (isset($_REQUEST['action2']) && $_REQUEST['action2'] != '' && $_REQUEST['action2'] != -1)
 			$action = $_REQUEST['action2'];
-		if(isset($_REQUEST['action']) && $_REQUEST['action'] != '' && $_REQUEST['action'] != -1)
+		if (isset($_REQUEST['action']) && $_REQUEST['action'] != '' && $_REQUEST['action'] != -1)
 			$action = $_REQUEST['action'];
 
-		digiid_init('add');
-
-		if($action)
+		if ($action)
 		{
 			switch($action)
 			{
@@ -378,8 +422,8 @@ SQL;
 						$digiid = new DigiID();
 
 						if ($digiid->isAddressValid($address, FALSE) OR $digiid->isAddressValid($address, TRUE))
+						/* Registration? */
 						{
-							/* Registration? */
 							$userlink_row = array();
 							$userlink_row['user_id'] = $user_id;
 							$userlink_row['address'] = $address;
@@ -401,40 +445,6 @@ SQL;
 						$default_address = sanitize_text_field($_REQUEST['address']);
 
 
-/*					$legend_title = _x("Add Digi-ID address", 'legend_title', 'Digi-ID-Authentication');
-					$label_scan = _x("Scan it till 'Digi-ID success'", 'label_scan', 'Digi-ID-Authentication');
-					$label_title = _x("or specify here", 'input_title', 'Digi-ID-Authentication');
-					$button_title = _x("Link to my account", 'button', 'Digi-ID-Authentication');
-
-					$qr_url = digiid_get_callback_url(NULL, 'add');
-					$url_encoded_url = urlencode($qr_url);
-					$alt_text = htmlentities(_x("QR-code for Digi-ID", 'qr_alt_text', 'Digi-ID-Authentication'), ENT_QUOTES);
-
-					$page = sanitize_text_field($_REQUEST['page']);
-					$url = esc_url (plugin_dir_url(__FILE__) . "?page=$page&action=add");
-
-					echo <<<HTML
-<form action='$url' method='post' id='digiid-addnew'>
-	<fieldset>
-		<legend style='font-size: larger;'>
-			<h2>{$legend_title}</h2>
-		</legend>
-		<div class='fieldset_content' id="digiid_qr">
-			<center>
-				<h2>{$label_scan}:</h2>
-				<a href='{$qr_url}'><img alt='{$alt_text}' title='{$alt_text}' width='200px' height='200px' style="display: block"></a>
-				<h2>{$label_title}:</h2>
-				<label>
-					<input type='text' name='address' value='{$default_address}' style='width: 100%; max-width: 400px; text-align: center' />
-				</label>
-				<br />
-				<input type='submit' value='{$button_title}' />
-			</center>
-		</div>
-	</fieldset>
-</form>
-HTML;*/
-
 					$page = sanitize_text_field($_REQUEST['page']); 
 					$back_url = esc_url("?page=$page");
 
@@ -443,6 +453,7 @@ HTML;*/
 <input type='hidden' name='redirect_to' value='$back_url'>
 HTML;
 					echo digiid_qr_html('add');
+					digiid_init('add');
 					echo "</div>";
 					break;
 				}
@@ -454,42 +465,42 @@ HTML;
 					$deleted_addresses = array();
 					$failed_addresses = array();
 
-					if(isset($_REQUEST['digiid_row']))
+					if (isset($_REQUEST['digiid_row']))
 					{
-						foreach($_REQUEST['digiid_row'] as $address)
+						foreach ($_REQUEST['digiid_row'] as $address)
 							$found_addresses[$address] = sanitize_text_field($address);
 					}
-					else if(isset($_REQUEST['address']))
+					else if (isset($_REQUEST['address']))
 					{
 						$address = $_REQUEST['address'];
 						$found_addresses[$address] = sanitize_text_field($address);
 					}
 
-					if(!$found_addresses)
+					if (!$found_addresses)
 					{
-						if($_POST)
+						if ($_POST)
 							echo digiid_admin_notice(__("Select some rows before asking to delete them", 'Digi-ID-Authentication'), 'error');
 						else
 							echo digiid_admin_notice(sprintf(__("Missing paramater '%s'", 'Digi-ID-Authentication'), 'address'), 'error');
 						break;
 					}
 
-					foreach($addresses as $current_address)
+					foreach ($addresses as $current_address)
 					{
 						$address = $current_address['address'];
-						if(isset($found_addresses[$address]))
+						if (isset($found_addresses[$address]))
 						{
 							$try_addresses[$address] = $address;
 							unset($found_addresses[$address]);
 
-							if(!$found_addresses)
+							if (!$found_addresses)
 							{
 								break;
 							}
 						}
 					}
 
-					if($found_addresses)
+					if ($found_addresses)
 					{
 						echo digiid_admin_notice(
 							sprintf(
@@ -505,18 +516,18 @@ HTML;
 						);
 					}
 
-					if(!$try_addresses)
+					if (!$try_addresses)
 					{
 						break;
 					}
 
 					$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
 
-					foreach($try_addresses as $address)
+					foreach ($try_addresses as $address)
 					{
 						$db_result = $GLOBALS['wpdb']->delete($table_name_links, array('address' => $address, 'user_id' => $user_id));
 
-						if($db_result)
+						if ($db_result)
 						{
 							$deleted_addresses[$address] = $address;
 						}
@@ -526,7 +537,7 @@ HTML;
 						}
 					}
 
-					if($failed_addresses)
+					if ($failed_addresses)
 					{
 						echo digiid_admin_notice(
 							sprintf(
@@ -542,7 +553,7 @@ HTML;
 						);
 					}
 
-					if($deleted_addresses)
+					if ($deleted_addresses)
 					{
 						echo digiid_admin_notice(
 							sprintf(
@@ -575,14 +586,14 @@ HTML;
 		$page = sanitize_text_field($_REQUEST['page']); 
 		$url = esc_url("?page=$page&action=add");
 
-		echo <<<HTML_BLOCK
+		echo <<<HTML
 <div class="wrap">
 	<h2>
 		<span>{$page_title}</span>
 		<a class="add-new-h2" href="$url">{$add_link_title}</a>
 	</h2>
 
-HTML_BLOCK;
+HTML;
 
 		if (!$addresses)
 		{
@@ -681,13 +692,12 @@ HTML_BLOCK;
 
 	function digiid_get_nonce($nonce_action)
 	{
-		global $digiid_session_id;
-		$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
+		global $digiid_session_id, $table_name_nonce;
 
-		$query = "DELETE FROM {$table_name_nonce} WHERE birth < NOW() - INTERVAL 30 MINUTE";
+		$query = "DELETE FROM {$table_name_nonce} WHERE birth is not null AND birth < NOW() - INTERVAL 60 MINUTE";
 		$GLOBALS['wpdb']->query($query);
 
-		$query = $GLOBALS['wpdb']->prepare("DELETE FROM {$table_name_nonce} WHERE session_id = %s", $digiid_session_id);
+		//$query = $GLOBALS['wpdb']->prepare("DELETE FROM {$table_name_nonce} WHERE session_id = %s", $digiid_session_id);
 		$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE nonce_action = %s AND session_id = %s", $nonce_action, $digiid_session_id);
 		$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
 		if ($nonce_row)
@@ -699,28 +709,29 @@ HTML_BLOCK;
 		$nonce_row['session_id'] = $digiid_session_id;
 		$nonce_row['birth'] = current_time('mysql');
 
-		$user_id = get_current_user_id();
-		if($user_id)
+		if ($user_id = get_current_user_id())
 			$nonce_row['user_id'] = $user_id;
+		else
+			$nonce_row['user_id'] = false;
 
 		$db_result = $GLOBALS['wpdb']->insert( $table_name_nonce, $nonce_row );
-		if($db_result)
+		if ($db_result)
 			return $nonce_row['nonce'];
-		else
-			return $db_result;
+		
+		return $db_result;
 	}
 
 	function digiid_get_callback_url($nonce = NULL, $nonce_action = NULL)
 	{
-		if(!$nonce && $nonce_action)
+		if (!$nonce && $nonce_action)
 			$nonce = digiid_get_nonce($nonce_action);
 
-		if(!$nonce)
+		if (!$nonce)
 			return FALSE;
 
 		$url = home_url("digiid/callback?x=" . $nonce);
 
-		if(substr($url, 0, 8) == 'https://')
+		if (substr($url, 0, 8) == 'https://')
 			return 'digiid://' . substr($url, 8);
 		else
 			return 'digiid://' . substr($url, 7) . "&u=1";
@@ -729,9 +740,8 @@ HTML_BLOCK;
 	function digiid_login_header($messages)
 	{
 		$messages = '';
-		//$action = (isset($_REQUEST) && $_REQUEST['action'] == 'register') ? 'register' : 'login';
-		//if ($action == 'login') 
 		$messages .= digiid_qr_html();
+		digiid_init();
 		return $messages;
 	}
 
@@ -746,15 +756,13 @@ HTML_BLOCK;
 
 JS
 		);*/
-		digiid_init();
 	}
 
 	function digiid_exit()
 	{
-		global $digiid_session_id;
-		$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
+		global $digiid_session_id, $table_name_nonce;
 
-		$GLOBALS['wpdb']->delete($table_name_nonce, array('session_id' => $digiid_session_id));
+		//$GLOBALS['wpdb']->delete($table_name_nonce, array('session_id' => $digiid_session_id));
 		$GLOBALS['wpdb']->delete($table_name_nonce, array('address' => $_SESSION['digiid_addr']));
 		unset ($_SESSION['digiid_addr']);
 		$digiid_session_id = false;
@@ -763,7 +771,7 @@ JS
 	function digiid_callback_test()
 	{
 		$digiid_callback_url = "/digiid/callback";
-		if(strstr($_SERVER['REQUEST_URI'], $digiid_callback_url))
+		if (strstr($_SERVER['REQUEST_URI'], $digiid_callback_url))
 		{
 			require_once("callback.php");
 		}
@@ -776,9 +784,9 @@ JS
 
 	function digiid_list_users_addresses($user_id)
 	{
-		$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
+		global $table_name_links;
 
-		if($user_id === TRUE)
+		if ($user_id === TRUE)
 		{
 			$query = "SELECT * FROM {$table_name_links}";
 			return $GLOBALS['wpdb']->get_results($query, ARRAY_A);
@@ -807,3 +815,181 @@ HTML;
 		load_plugin_textdomain( 'Digi-ID-Authentication', false, $plugin_dir );
 	}
 
+
+// Add Link (Tab) to My Account menu
+add_filter ('woocommerce_account_menu_items', '\DigiIdAuthentication\digiid_wc_account_menu', 40);
+function digiid_wc_account_menu($menu_links) {
+ 
+	// Insert after 5th point - on some environment do not work, so disabled
+	/*
+	$menu_links = array_slice($menu_links, 0, 5, true) 
+		+ array('digiid' => 'Digi-ID')
+		+ array_slice($menu_links, 5, NULL, true);*/
+ 
+	return $menu_links;
+ 
+}
+
+
+// Register Permalink Endpoint
+add_action( 'init', '\DigiIdAuthentication\digiid_wc_menu_endpoint' );
+function digiid_wc_menu_endpoint() 
+{
+
+	// WP_Rewrite is my Achilles' heel, so please do not ask me for detailed explanation
+	add_rewrite_endpoint('digiid', EP_PAGES);
+
+}
+
+
+// woocommerce_account_{ENDPOINT NAME}_endpoint
+add_action( 'woocommerce_account_digiid_endpoint', '\DigiIdAuthentication\digiid_wc_endpoint_content' );
+function digiid_wc_endpoint_content()
+{
+	$add_qr_html = digiid_qr_html('add');
+	digiid_init('add');
+
+	$user_id = get_current_user_id();
+	$addr_list = digiid_list_users_addresses($user_id);
+
+	echo digiid_get_template('digiid_menu_content.html', compact('user_id', 'addr_list', 'add_qr_html'));
+}
+
+
+// Login form
+add_action('woocommerce_before_customer_login_form', '\DigiIdAuthentication\woocommerce_before_customer_login_form');
+function woocommerce_before_customer_login_form()
+{
+	$qr_html = digiid_qr_html('wc-myaccount');
+	digiid_init('wc-myaccount');
+
+	echo digiid_get_template('before_login_form.html', compact('qr_html'));
+}
+
+
+add_action('woocommerce_register_form_start', '\DigiIdAuthentication\digiid_wc_extra_register_fields');
+function digiid_wc_extra_register_fields()
+{
+	$digiid_address = isset($_REQUEST['digiid_addr']) ? sanitize_text_field($_REQUEST['digiid_addr']) : '';
+	$unique_id = digiid_qr_last_id();
+
+	$js = <<<JS
+	jQuery(function() {
+		jQuery('#digiid_addr').change(function(){
+			val = jQuery('#digiid_addr').val();
+			digiid_qr_change_visibility('$unique_id', (val == '') ? 'show' : 'hide')
+		}).change()
+
+	});
+JS;
+	$js = str_replace("\t","", $js);
+	wp_add_inline_script('digiid_custom_js', $js);
+
+?>
+	<p class="form-row form-row-wide">
+	<label for="digiid_addr"><?php _e('Digi-ID address (optional)', 'woocommerce') ?></label>
+	<input type="text" class="input-text" name="digiid_addr" id="digiid_addr" value="<?= $digiid_address ?>" />
+	</p>
+	<div class="clear"></div>
+	<?php
+}
+
+
+add_action('woocommerce_account_dashboard', '\DigiIdAuthentication\digiid_wc_dashboard_after');
+function digiid_wc_dashboard_after()
+{
+	$add_qr_html = digiid_qr_html('add');
+	digiid_init('add');
+
+	$user_id = get_current_user_id();
+	$addr_list = digiid_list_users_addresses($user_id);
+
+	echo digiid_get_template('dashboard.html', compact('user_id', 'addr_list', 'add_qr_html'));
+
+	//echo digiid_get_template('dashboard.html', array('url' => esc_url(wc_get_endpoint_url('digiid'))));
+}
+
+
+// This adds support for a [digiid] shortcode
+add_shortcode('digiid', '\DigiIdAuthentication\digiid_shortcode');
+function digiid_shortcode()
+{
+	global $woocommerce_is_activated;
+
+	// Already logged
+	$user = wp_get_current_user();
+	if ($user->exists())
+	{
+		// Try WooCommerce
+		if ($woocommerce_is_activated)
+		{
+			$page_id = \WooCommerce\wc_get_page_id('myaccount');
+			$url = wp_logout_url(get_permalink($page_id));
+		}
+		else
+			$url = wp_logout_url();
+
+ 		echo digiid_get_template('widget_logged_in.html', array(
+			'login' => $user->user_login,
+			'logout_url' => $url
+			));
+		return;
+	}
+
+	// Show QR
+	$qr_html = digiid_qr_html('wc-login');
+	digiid_init('wc-login-widget');
+	return "<div class='digiid_shortcode'>$qr_html</div>";
+}
+
+
+/* */
+add_filter('woocommerce_widget_shopping_cart_buttons', '\DigiIdAuthentication\digiid_wc_after_cart', 40);
+function digiid_wc_after_cart()
+{
+	return digiid_shortcode();
+}
+
+
+// Digi-ID field Validating
+add_action('woocommerce_register_post', 'digiid_wc_validate_extra_register_fields', 10, 3);
+function digiid_wc_validate_extra_register_fields($username, $email, $validation_errors) 
+{
+	if (isset($_POST['digiid_addr']) && !empty($_POST['digiid_addr'])) {
+		$address = $_POST['digiid_addr'];
+		if (strlen($address)<10) {
+			$validation_errors->add('digiid_address_error', __('<strong>Error</strong>: Incorrect Digi-ID address!', 'woocommerce'));
+		}
+	}
+	return $validation_errors;
+}
+
+
+/**
+* Below code save extra fields.
+*/
+add_action('woocommerce_created_customer', 'digiid_wc_save_extra_register_fields');
+function digiid_wc_save_extra_register_fields($customer_id)
+{
+    if (!empty($_POST['digiid_addr'])) {
+		// Phone input filed which is used in WooCommerce
+		update_user_meta($customer_id, 'digiid_addr', sanitize_text_field($_POST['digiid_addr']));
+	}
+}
+
+
+/*
+ * Get Digi-ID address by user_id 
+ */
+function digiid_get_addr($user_id = null)
+{
+	global $table_name_links;
+
+	// Current user by default
+	if ($user_id == null) $user_id = get_current_user_id();
+
+	$query = $GLOBALS['wpdb']->prepare($ask = "SELECT * FROM {$table_name_links} WHERE user_id = %d", $user_id);
+	$user_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+
+	return ($user_row) ? $user_row['address'] : null;
+}

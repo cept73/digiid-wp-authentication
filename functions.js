@@ -1,140 +1,188 @@
 
 
 /* Timer params */
-var digiid_timers_started = false;
-var digiid_timers = [];
-var digiid_old_href = false;
+var digiid_timers_started = {};
+var digiid_timers = {};
+var digiid_old_href = {};
+var digiid_config = {};
+var digiid_base_ajax = '';
 
 
 /* Detect show or hide QR, start or stop timer */
-function digiid_qr_change_visibility(new_state = null)
+function digiid_qr_change_visibility(id, new_state = null)
 {
+    if (id == null) {
+        for (timer_id in digiid_timers_started)
+            digiid_qr_change_visibility(timer_id, new_state)
+
+        return;
+    }
+
+    obj = jQuery("#" + id);
+
     // Autodetect
     if (new_state == null)
     {
-        if (!document.getElementById('digiid_addr'))
-            new_state = 'show';
-        else if (document.getElementById('digiid_addr').value == '')
+        /*if (jQuery("input[name=digiid_addr]").length == 0)
+            new_state = 'hide';
+        else*/ if (jQuery("input[name=digiid_addr]", obj).length == 0)
             new_state = 'show';
         else
             new_state = 'hide';
     }
 
+    old_state = obj.hasClass('timeout') ? 'hide' : 'show';
+    if (old_state == new_state) return;
+
+    // Show block
+    jQuery('.digiid', obj).show()
+
     // Change state
-    var digiid_btn_showqr = document.getElementById('digiid_btn_showqr')
-    var registerform = document.getElementById('registerform')
-    if (new_state == 'hide') 
+    var digiid_btn_showqr = jQuery('.digiid_btn_showqr', obj)
+    var registerform = jQuery('.registerform', obj)
+    if (new_state == 'hide' || new_state == 'complete') 
     {
-        // Stop timer
-        digiid_stop_timer();
+        // Stop timer if any
+        digiid_stop_timer(id)
 
         // Will work with our block
-        var digiid_block = document.getElementById('digiid')
+        var digiid_block = jQuery('.digiid', obj)
 
-        // Not hide on login, only change opacity
-        if (digiid_config['action'] == 'login')
+        // Make opacity and change link to refresh page
+        if (digiid_block.length)
         {
-            // Make opacity and change link to refresh page
-            if (digiid_block)
-            {
-                digiid_block.style.opacity = "0.1"
-                digiid_old_href = document.querySelector('#digiid_qr a').href
-                document.querySelector('#digiid_qr a').href = 'javascript:digiid_reload();'; 
-                document.querySelector('#digiid_qr a img').title = 'Click to generate new QR code'; 
+            digiid_old_href[id] = jQuery('.digiid_qr a', obj).attr('href');
+
+            // For complete - special class
+            if (new_state == 'complete') {
+                digiid_qr_class = 'qr_completed';
+                digiid_qr_script = 'return false;';
+                digiid_qr_title = '';
+            }
+            else {
+                digiid_qr_class = 'timeout';
+                digiid_qr_script = 'digiid_reload("'+id+'")';
+                digiid_qr_title = 'Click to generate new QR code';
             }
 
-            qr = document.getElementById("qr")
-            if (qr) qr.parentElement.href = window.location;
-        }
-        else
-        {
-            // Hide QR and show btn
-            if (digiid_block) digiid_block.style.display = 'none';
-            if (digiid_btn_showqr) digiid_btn_showqr.style.display = '';
-
-            // Remove margin
-            if (registerform) registerform.style['margin-top'] = 0
+            digiid_block.parent().addClass(digiid_qr_class);
+            jQuery('.digiid_qr a', obj).attr('href', 'javascript:' + digiid_qr_script);
+            jQuery('.digiid_qr a img', obj).attr('title', digiid_qr_title);
         }
 
+        jQuery(".qr", obj).parent().attr('href', 'window.location');
+        
         // Hide progress
-        el = document.getElementById('digiid_progress_full')
-        if (el) el.style.display = 'none'
+        jQuery('.digiid_progress_full', obj).hide()
     }
     else
     {
         // Run timer, if it's does not worked yet
-        digiid_start_timer();
+        digiid_start_timer(id);
+
+        // Recharge progress bar
+        jQuery('.digiid_progress_bar', obj).css('width', 100 + '%');
+
+        // Clean message type and content
+        obj.next()
+            .attr('class', 'digiid_msg')
+            .html('');
 
         // Hide btn
-        if (digiid_btn_showqr) digiid_btn_showqr.style.display = 'none';
+        if (digiid_btn_showqr.length) digiid_btn_showqr.hide()
 
         // Restore margin
-        if (registerform) registerform.style['margin-top'] = ''
+        if (registerform.length) registerform.css('margin-top', '')
 
         // Show progress
-        el = document.getElementById('digiid_progress_full')
-        if (el) el.style.display = ''
+        jQuery('.digiid_progress_full', obj).show ()
     }
 }
 
 
 /* Reload page */
-function digiid_reload()
+function digiid_reload(id)
 {
-    window.location = window.location
+    // Remove focus
+    //jQuery('body').focus()
+    // Show
+    digiid_qr_change_visibility(id, 'show')
 }
 
-/* Clear field and show QR */
-function digiid_clear_qr()
+
+function digiid_on_change_reg_input_addr()
 {
+    let digiid_addr = jQuery('input[name=digiid_addr]').val();
+
+    if (digiid_addr != '') {
+        digiid_qr_change_visibility('digiid_1','hide');
+        jQuery('#digiid_1').hide();
+    } else {
+        digiid_qr_change_visibility('digiid_1','show'); 
+        jQuery('#digiid_1').show(); 
+    }
+}
+
+
+/* Clear field and show QR */
+function digiid_clear_qr(id = null)
+{
+    if (id == null)
+        obj = jQuery('body');
+    else
+        obj = jQuery("#" + id);
+    
     // Clear field
-    let digiid_addr = document.getElementById('digiid_addr')
+    let digiid_addr = jQuery('input[name=digiid_addr]', obj)
     // On registration
-    if (digiid_addr) digiid_addr.value = '';
+    digiid_addr.val('');
 
     // Show QR 
-    digiid_qr_change_visibility ('show'); 
+    //digiid_qr_change_visibility(id, 'show'); 
+    digiid_on_change_reg_input_addr();
 }
 
 
 /* Start timer */
-function digiid_start_timer()
+function digiid_start_timer(id)
 {
+    obj = jQuery("#" + id);
+
     // Show in full height
-    el = document.getElementById('digiid');
-    if (el)
+    el = jQuery('.digiid', obj);
+    if (el.length)
     {
-        // Show all
-        el.style.display = '';
-        el.style.opacity = '';
+        // Remove old timer
+        el.parent().removeClass('timeout', 500);
 
         // Restore link, if saved
-        if (digiid_old_href) document.querySelector('#digiid_qr a').href = digiid_old_href; 
+        if (digiid_old_href[id]) jQuery('.digiid_qr a', obj).attr('href', digiid_old_href[id]); 
     }
 
     // Already runned?
-    if (digiid_timers_started) return false;
+    if (digiid_timers_started[id]) return false;
 
     // Starting timers
-    digiid_timers_started = Math.floor(Date.now() / 1000);
-    digiid_timers['timeout'] = setTimeout("digiid_qr_change_visibility('hide')", 2*60*1000 + 50); // 2 min
-    digiid_timers['next_check'] = setInterval(digiid_load_ajax, 4*1000); // 4 sec
-    digiid_timers['tick'] = setInterval("digiid_tick(120)", 4*1000); // 1 sec
+    digiid_timers_started[id] = Math.floor(Date.now() / 1000);
+    digiid_timers[id] = {}
+    digiid_timers[id]['timeout'] = setTimeout("digiid_qr_change_visibility('"+id+"','hide')", 2*60*1000 + 50); // 2 min
+    digiid_timers[id]['next_check'] = setInterval("digiid_load_ajax('"+id+"')", 4*1000); // 4 sec
+    digiid_timers[id]['tick'] = setInterval("digiid_tick('"+id+"',120)", 4*1000); // 1 sec
 
     // Also additional immediately at start
-    digiid_load_ajax();
+    digiid_load_ajax(id);
 
     return true;
 }
 
 
 /* Update progress bar */
-function digiid_tick(max)
+function digiid_tick(id, max)
 {
-    if (!digiid_timers_started) return;
+    if (!digiid_timers_started[id]) return;
 
     now = Math.floor(Date.now() / 1000);
-    procents = (now - digiid_timers_started) / max * 100;
+    procents = (now - digiid_timers_started[id]) / max * 100;
 
     // Skip it
     if (procents < 3) return;
@@ -142,48 +190,57 @@ function digiid_tick(max)
     // 100% - end
     if (procents > 100) {
         procents = 100;
-        clearInterval(digiid_timers['tick']);
-        delete(digiid_timers['tick']);
+        clearInterval(digiid_timers[id]['tick']);
+        delete(digiid_timers[id]['tick']);
     }
 
-    bar = document.getElementById('digiid_progress_bar');
-    if (bar) bar.style.width = (100-procents) + '%';
+    obj = jQuery("#" + id);
+    jQuery('.digiid_progress_bar', obj).css('width', (100-procents) + '%');
 }
 
 
 /* Stop timer */
-function digiid_stop_timer()
+function digiid_stop_timer(id = null)
 {
+    // Stop all timers
+    if (id == null) {
+        for (timer_id in digiid_timers_started)
+        {
+            console.log(timer_id)
+            digiid_stop_timer(timer_id)
+        }
+
+        return false;
+    }
+
     // Already stopped
-    if (!digiid_timers_started) return false;
+    if (!digiid_timers_started[id]) return false;
 
     // Stop old timeout timers, if any
     timer_destructor = {'timeout': clearTimeout, 'next_check': clearInterval, 'tick': clearInterval}
     for (item in timer_destructor)
     {
         // If timer is not active - skip
-        if (!(item in digiid_timers)) continue;
+        if (!(item in digiid_timers[id])) continue;
 
         // Run destructor on this timer
-        timer_destructor[item].call ( this, digiid_timers[item] )
-        delete( digiid_timers[item] )
+        timer_destructor[item].call ( this, digiid_timers[id][item] )
+        delete( digiid_timers[id][item] )
     }
-    //if ('next_check' in digiid_timers) clearInterval(digiid_timers['next_check']);
-    //if ('tick' in digiid_timers) clearInterval(digiid_timers['tick']);
 
-    digiid_timers_started = false;
+    digiid_timers_started[id] = false;
     return true;
 }
 
 
 /* Refresh QR state */
-function digiid_load_ajax (action='', ajax_url='')
+function digiid_load_ajax(id, action='', ajax_url='')
 {
-    // Timers do not work now    
-    if (!digiid_timers_started) return;
+    // Timers do not work now
+    if (!digiid_timers_started[id]) return;
 
-    if (action == '') action = digiid_config['action'];
-    if (ajax_url == '') ajax_url = digiid_config['ajax_url'];
+    if (action == '') action = digiid_config[id]['action'];
+    if (ajax_url == '') ajax_url = digiid_config[id]['ajax_url'];
 
     var ajax = new XMLHttpRequest();
     ajax.open("GET", ajax_url, true);
@@ -196,7 +253,7 @@ function digiid_load_ajax (action='', ajax_url='')
             if(ajax.responseText != '')
             {
                 var json = JSON.parse(ajax.responseText);
-                digiid_after_ajax(action, json);
+                digiid_after_ajax(id, action, json);
             }
         }
     ajax.send();
@@ -204,58 +261,128 @@ function digiid_load_ajax (action='', ajax_url='')
 
 
 /* Analize response of ajax request  */
-function digiid_after_ajax (action, json)
+function digiid_after_ajax (id, action, json)
 {
+    obj = jQuery("#" + id);
+
+    // Login
+    if(json.html > '')
+    {
+        // .digiid_msg 
+        obj.next().html(json.html).addClass('message')
+    }
+
     // Register
     if (action == 'register') 
     {
         if (json.address > '')
         {
-            digiid_qr_change_visibility('hide');
-            document.getElementById('digiid_addr').value = json.address;
-        }
+            // Input field not found
+            el = jQuery('input[name=digiid_addr]', obj)
+            if (el.length == 0)
+                el = jQuery('input[name=digiid_addr]')
 
+            // Set
+            el.val(json.address);
+            digiid_on_change_reg_input_addr();
+        }
         return;
     }
 
-    // Add
-    if (action == 'add') 
+    // Myaccount
+    if (action == 'wc-myaccount') 
     {
-    }
-
-    // Login
-    if(json.html > '')
-    {
-        el = document.getElementById('digiid_msg');
-        if (el)
+        if (json.status == 2)
         {
-            el.innerHTML = json.html;
-            el.classList.add('message');
+            // Hide QR
+            digiid_qr_change_visibility(id, 'hide');
+
+            // Working with input field
+            jQuery('#digiid_addr')
+                // Write address
+                .val(json.address)
+                // Add highlight
+                .addClass('digiid_highlight')
+                // Check address is changed manually
+                .on('change', function() {
+                    if (this.value != json.address)
+                        jQuery(this).removeClass('digiid_highlight')
+                    else
+                        jQuery(this).addClass('digiid_highlight')
+                });
+
+            // Will try to focus
+            jQuery('#reg_email').focus();
         }
     }
 
-    if(json.stop > 0)
+    // Widget
+    /*if (action == 'wc-login') 
     {
-        digiid_qr_change_visibility('hide');
+        if (json.status == 2)
+        {
+            // .digiid_msg
+            obj.next().html('>>>' + json.html).addClass('message')
+            console.log (json.html)
+            console.log (obj)
+            console.log (id)
+        }
+    }*/
+
+    if (json.stop > 0)
+    {
+        digiid_qr_change_visibility(id, 'hide');
     }
 
-    if(json.reload > 0)
+    if (json.message)
     {
-        var redirect = document.getElementsByName("redirect_to");
-        if(redirect && redirect[0] && redirect[0].value > '')
-        {
-            window.location.href = redirect[0].value;
-        }
-        else
-        {
-            window.location.href = window.location.href;
-        }
+        div_msg = obj.next().html(json.message).addClass('message')
+        if (json.message_class) div_msg.addClass(json.message_class)
     }
+    else
+
+    if (json.reload > 0)
+    {
+        // Stop all timers
+        digiid_qr_change_visibility(null, 'complete')
+
+        // Detect url to redirect
+        var url = window.location.href;
+        if (json.redirect_url) url = json.redirect_url; 
+        else {
+            redirect_input = jQuery('input[name=redirect_to]', obj);
+            if (redirect_input.length && redirect_input.val() != '')
+                url = redirect_input.val();
+        }
+        if (url) window.location.href = url;
+    }
+}
+
+function digiid_remove_address(el)
+{
+    digiid_address = el.parentElement.parentElement.textContent.trim();
+    ajax_url = digiid_base_ajax + '&type=del&digiid_addr=' + digiid_address;
+
+    var ajax = new XMLHttpRequest();
+    ajax.open("GET", ajax_url, true);
+    ajax.onreadystatechange =
+        function ()
+        {
+            if(ajax.readyState != 4 || ajax.status != 200)
+                return;
+
+            if(ajax.responseText != '')
+            {
+                var json = JSON.parse(ajax.responseText);
+                if (json.reload) window.location = window.location;
+            }
+        }
+    ajax.send();
 }
 
 
 // copy yo clipboard
-function digiid_copyToClipboard (str) 
+function digiid_copyToClipboard(str) 
 {
     const el = document.createElement('textarea');  // Create a <textarea> element
     el.value = str;                                 // Set its value to the string that you want copied
@@ -279,7 +406,7 @@ function digiid_copyToClipboard (str)
 
 
 /* On load stack */
-function digiid_onload_add (event) 
+function digiid_onload_add(event) 
 {
     if (window.onload)
         window.onload = window.onload + event;

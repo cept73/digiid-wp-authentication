@@ -1,0 +1,16 @@
+			<div style="width:100%">
+				<label for="digiid_addr"><?= $label ?></label>
+
+				<div style="clear:both"></div>
+
+				<input type="text" name="digiid_addr" class="input digiid_addr" placeholder="<?= $addr_placeholder ?>"
+					value="<?= $addr ?>" size="37" 
+					onchange="javascript: digiid_on_change_reg_input_addr()" />
+				<span class="digiid_btn_showqr" style="display: hidden">
+					<a href="javascript:;" title="<?= $button_showqr ?>" onclick="javascript: digiid_clear_qr()">
+						<img src="<?= $dir ?>/assets/qr-64x64.jpg" width="28px">
+					</a>
+				</span>
+			</div>
+
+			<div style="clear:both"></div>

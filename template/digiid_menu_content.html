@@ -1,0 +1,15 @@
+
+<h3>Digi-ID Settings</h3>
+
+<?php if (count($addr_list)) : ?>
+<h4>Your addresses:</h4>
+<ul id="digiid_settings">
+<?php foreach ($addr_list as $elem) { ?>
+    <li><span style="margin-right: 10px"><i><?= $elem['address'] ?></i></span> <span><a href="javascript:;" onclick="javascript:digiid_remove_address(this)"><!--<i class="fas fa-times-circle"></i>-->remove</a></span></li>
+<?php } ?>
+</ul>
+<?php endif ?>
+
+
+<?= $add_qr_html ?>
+
