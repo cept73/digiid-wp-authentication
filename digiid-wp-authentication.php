@@ -84,8 +84,8 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.9');
 		if (!defined('DIGIID_AUTHENTICATION_INIT')) {
 			// Run only once
 			wp_enqueue_script('digiid_digiqr', plugin_dir_url(__FILE__) . 'digiQR.min.js');
-			wp_enqueue_script('digiid_custom_js', plugin_dir_url(__FILE__) . 'functions.js?14', array('jquery'));
-			wp_enqueue_style('digiid_custom_css', plugin_dir_url(__FILE__) . 'styles.css?14');
+			wp_enqueue_script('digiid_custom_js', plugin_dir_url(__FILE__) . 'functions.js?15', array('jquery'));
+			wp_enqueue_style('digiid_custom_css', plugin_dir_url(__FILE__) . 'styles.css?15');
 			wp_add_inline_script('digiid_custom_js', "digiid_base_ajax = '".admin_url('admin-ajax.php?action=digiid')."'");
 
 			DEFINE("DIGIID_AUTHENTICATION_INIT", true);

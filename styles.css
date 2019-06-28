@@ -185,6 +185,7 @@ li.woocommerce-MyAccount-navigation-link--digiid a::before {
 /* No outline */
 .digiid_qr a:focus {
     outline: none;
+    border: none;
 }
 
 /* Long text must be shown in input */

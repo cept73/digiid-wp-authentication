@@ -1,6 +1,8 @@
-svn add assets classes *.php *.js *.css *.txt *.md
+svn add assets classes template *.php *.js *.css *.txt *.md
 mkdir ../tags/1.0.9
 mkdir ../tags/1.0.9/assets
+mkdir ../tags/1.0.9/template
 cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.9
-cp -r assets/*.jpg ../tags/1.0.9/assets
+cp -r assets/*.* ../tags/1.0.9/assets
+cp -r template/*.html ../tags/1.0.9/template
 cp -r assets ..
