@@ -351,6 +351,8 @@ function digiid_after_ajax (id, action, json)
         if (json.redirect_url) url = json.redirect_url; 
         else {
             redirect_input = jQuery('input[name=redirect_to]', obj);
+            if (redirect_input.length == 0) redirect_input = jQuery('input[name=redirect_to]');
+
             if (redirect_input.length && redirect_input.val() != '')
                 url = redirect_input.val();
         }
