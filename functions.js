@@ -134,7 +134,7 @@ function digiid_clear_qr(id = null)
         obj = jQuery('body');
     else
         obj = jQuery("#" + id);
-    
+
     // Clear field
     let digiid_addr = jQuery('input[name=digiid_addr]', obj)
     // On registration

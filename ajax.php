@@ -185,7 +185,7 @@ return [$user->ID, $user->data->user_login];*/
 
 						$data['html'] .= 
 							'<p style="margin-top:10px">'
-							. '<a class="button button-small" href="javascript: digiid_clear_qr()">Scan QR from other device</a> ';
+							. '<a class="button button-small" href="javascript: window.location=window.location">Scan QR from other device</a> ';
 
 						if ( get_option( 'users_can_register' ) ) 
 							$data['html'] .= '<a class="button button-small" href="' . $register_url . '&nonce=' . $nonce_row['nonce'] . '">Register user</a>';
