@@ -2,12 +2,12 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.9
+ * @version 1.0.10
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.9
+Version: 1.0.10
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
@@ -104,6 +104,10 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.9');
 		if ($action == 'wc-login-widget') {
 			$start_state = 'hide';
 			$action = 'wc-login';
+		}
+		if ($action == 'wc-dashboard') {
+			$start_state = 'hide';
+			$action = 'add';
 		}
 
 		$ajax_url = admin_url('admin-ajax.php?action=digiid&type=' . $action);
@@ -329,9 +333,22 @@ HTML;
 	/* Check version on load */
 	function digiid_update_db_check()
 	{
-		if (get_site_option( "digiid_plugin_version") !=  DIGIID_AUTHENTICATION_PLUGIN_VERSION )
-			digiid_install();
+		//if (get_site_option( "digiid_plugin_version") !=  DIGIID_AUTHENTICATION_PLUGIN_VERSION )
+		digiid_install();
 	}
+
+
+	/* Install plugin, add all tables or modifications */
+	function digiid_check_installed()
+	{
+		global $table_name_nonce, $table_name_links, $table_name_users;
+
+		// Detect current engine, use the same
+		$get_engine_table_users = "SELECT count(*) c FROM information_schema WHERE TABLE_NAME = '{$GLOBALS['wpdb']->prefix}users'";
+		$exist = $GLOBALS['wpdb']->get_var($get_engine_table_users);
+		return $exist != 0;
+	}
+
 
 	/* Install plugin, add all tables or modifications */
 	function digiid_install()
@@ -867,7 +884,7 @@ function woocommerce_before_customer_login_form()
 }
 
 
-add_action('woocommerce_register_form_start', '\DigiIdAuthentication\digiid_wc_extra_register_fields');
+add_action('woocommerce_register_form_start', '\DigiIdAuthentication\digiid_wc_extra_register_fields', 10, 0);
 function digiid_wc_extra_register_fields()
 {
 	$digiid_address = isset($_REQUEST['digiid_addr']) ? sanitize_text_field($_REQUEST['digiid_addr']) : '';
@@ -899,14 +916,12 @@ add_action('woocommerce_account_dashboard', '\DigiIdAuthentication\digiid_wc_das
 function digiid_wc_dashboard_after()
 {
 	$add_qr_html = digiid_qr_html('add');
-	digiid_init('add');
+	digiid_init('wc-dashboard');
 
 	$user_id = get_current_user_id();
 	$addr_list = digiid_list_users_addresses($user_id);
 
 	echo digiid_get_template('dashboard.html', compact('user_id', 'addr_list', 'add_qr_html'));
-
-	//echo digiid_get_template('dashboard.html', array('url' => esc_url(wc_get_endpoint_url('digiid'))));
 }
 
 
@@ -923,17 +938,16 @@ function digiid_shortcode()
 		// Try WooCommerce
 		if ($woocommerce_is_activated)
 		{
-			$page_id = \WooCommerce\wc_get_page_id('myaccount');
+			$page_id = wc_get_page_id('myaccount');
 			$url = wp_logout_url(get_permalink($page_id));
 		}
 		else
 			$url = wp_logout_url();
 
- 		echo digiid_get_template('widget_logged_in.html', array(
+ 		return digiid_get_template('widget_logged_in.html', array(
 			'login' => $user->user_login,
 			'logout_url' => $url
 			));
-		return;
 	}
 
 	// Show QR

@@ -1,8 +1,9 @@
 svn add assets classes template *.php *.js *.css *.txt *.md
-mkdir ../tags/1.0.9
-mkdir ../tags/1.0.9/assets
-mkdir ../tags/1.0.9/template
-cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.9
-cp -r assets/*.* ../tags/1.0.9/assets
-cp -r template/*.html ../tags/1.0.9/template
+mkdir ../tags/1.0.10
+mkdir ../tags/1.0.10/assets
+mkdir ../tags/1.0.10/classes
+mkdir ../tags/1.0.10/template
+cp -r classes *.php *.js *.css *.txt *.md ../tags/1.0.10
+cp -r assets/*.* ../tags/1.0.10/assets
+cp -r template/*.html ../tags/1.0.10/template
 cp -r assets ..

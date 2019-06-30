@@ -162,16 +162,21 @@ li.woocommerce-MyAccount-navigation-link--digiid a::before {
 
 /* Digi-ID authorization */
 .digiid_wc_myaccount {
-    width: 100%;
-    padding: 0 33%;
+    text-align: center;
     margin-bottom: 40px;
-    display: inline-flex;
+    display: block;
 }
 .digiid_wc_myaccount #digiid_select_dialog {
     display: none;
 }
 .digiid_wc_myaccount .digiid_qr_outer h1 {
     display: none;
+}
+.digiid_wc_myaccount .digiid_outer {
+    display: inline-block;
+}
+.digiid_wc_myaccount .digiid_outer .know-more {
+    text-align: center;
 }
 
 .digiid_shortcode .digiid_outer {

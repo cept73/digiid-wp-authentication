@@ -34,6 +34,9 @@ function digiid_qr_change_visibility(id, new_state = null)
     old_state = obj.hasClass('timeout') ? 'hide' : 'show';
     if (old_state == new_state) return;
 
+    if (jQuery('.digiid', obj).length == 0)
+        obj = jQuery('body');
+
     // Show block
     jQuery('.digiid', obj).show()
 
@@ -363,6 +366,7 @@ function digiid_after_ajax (id, action, json)
 function digiid_remove_address(el)
 {
     digiid_address = el.parentElement.parentElement.textContent.trim();
+    digiid_address = digiid_address.split(' ')[0];
     ajax_url = digiid_base_ajax + '&type=del&digiid_addr=' + digiid_address;
 
     var ajax = new XMLHttpRequest();
