@@ -361,15 +361,14 @@ HTML;
 		if (!$db_engine) $db_engine = "InnoDB"; // if some error while detection, use InnoDB
 		
 		$create_table_nonce = <<<SQL
-CREATE TABLE {$table_name_nonce} (
-	nonce VARCHAR(32) NOT NULL,
-	address VARCHAR(34) DEFAULT NULL,
-	session_id VARCHAR(40) NOT NULL,
-	user_id BIGINT(20) UNSIGNED NOT NULL,
-	nonce_action VARCHAR(40) NOT NULL,
-	birth DATETIME NOT NULL,
-	PRIMARY KEY (nonce),
-	KEY (birth)
+CREATE TABLE `{$table_name_nonce}` (
+	`nonce` VARCHAR(32) NOT NULL,
+	`address` VARCHAR(34) DEFAULT NULL,
+	`session_id` VARCHAR(40) NOT NULL,
+	`user_id` BIGINT(20) UNSIGNED NOT NULL,
+	`nonce_action` VARCHAR(40) NOT NULL,
+	`birth` DATETIME NOT NULL,
+	PRIMARY KEY `{$table_name_nonce}_pk_nonce` (`nonce`)
 )
 ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
@@ -377,15 +376,15 @@ COLLATE=utf8_bin
 SQL;
 
 		$create_table_links = <<<SQL
-CREATE TABLE {$table_name_links} (
-	user_id BIGINT(20) UNSIGNED NOT NULL,
-	address VARCHAR(34) NOT NULL,
-	birth DATETIME NOT NULL,
-	pulse DATETIME NOT NULL,
-	PRIMARY KEY (address),
-	KEY (user_id),
-	KEY (birth),
-	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID) ON UPDATE CASCADE ON DELETE CASCADE 
+CREATE TABLE `{$table_name_links}` (
+	`user_id` BIGINT(20) UNSIGNED NOT NULL UNIQUE,
+	`address` VARCHAR(34) NOT NULL,
+	`birth` DATETIME NOT NULL,
+	`pulse` DATETIME NOT NULL,
+	PRIMARY KEY (`address`),
+	FOREIGN KEY (`user_id`) REFERENCES `{$table_name_users}` (`ID`)
+	ON UPDATE CASCADE 
+	ON DELETE CASCADE 
 )
 ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
@@ -399,6 +398,7 @@ SQL;
 		update_option( "digiid_plugin_version", DIGIID_AUTHENTICATION_PLUGIN_VERSION );
 	}
 
+	
 	function digiid_menu()
 	{
 		// add_options_page( 'Digi-ID Options', 'Digi-ID', 'edit_users', 'Digi-ID-Authentication', 'digiid_option_page' );
