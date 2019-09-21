@@ -2,19 +2,19 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.10
+ * @version 1.0.12
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.10
+Version: 1.0.12
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
 
 namespace DigiIdAuthentication;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.9');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.12');
 
 
 	require_once ('required_classes.php');
@@ -361,14 +361,14 @@ HTML;
 		if (!$db_engine) $db_engine = "InnoDB"; // if some error while detection, use InnoDB
 		
 		$create_table_nonce = <<<SQL
-CREATE TABLE `{$table_name_nonce}` (
-	`nonce` VARCHAR(32) NOT NULL,
-	`address` VARCHAR(34) DEFAULT NULL,
-	`session_id` VARCHAR(40) NOT NULL,
-	`user_id` BIGINT(20) UNSIGNED NOT NULL,
-	`nonce_action` VARCHAR(40) NOT NULL,
-	`birth` DATETIME NOT NULL,
-	PRIMARY KEY `{$table_name_nonce}_pk_nonce` (`nonce`)
+CREATE TABLE {$table_name_nonce} (
+	nonce VARCHAR(32) NOT NULL,
+	address VARCHAR(34) DEFAULT NULL,
+	session_id VARCHAR(40) NOT NULL,
+	user_id BIGINT(20) UNSIGNED NOT NULL,
+	nonce_action VARCHAR(40) NOT NULL,
+	birth DATETIME NOT NULL,
+	PRIMARY KEY (nonce)
 )
 ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
@@ -376,15 +376,14 @@ COLLATE=utf8_bin
 SQL;
 
 		$create_table_links = <<<SQL
-CREATE TABLE `{$table_name_links}` (
-	`user_id` BIGINT(20) UNSIGNED NOT NULL UNIQUE,
-	`address` VARCHAR(34) NOT NULL,
-	`birth` DATETIME NOT NULL,
-	`pulse` DATETIME NOT NULL,
-	PRIMARY KEY (`address`),
-	FOREIGN KEY (`user_id`) REFERENCES `{$table_name_users}` (`ID`)
-	ON UPDATE CASCADE 
-	ON DELETE CASCADE 
+CREATE TABLE {$table_name_links} (
+	user_id BIGINT(20) UNSIGNED NOT NULL,
+	birth DATETIME NOT NULL,
+	address VARCHAR(34) NOT NULL,
+	pulse DATETIME NOT NULL,
+	PRIMARY KEY (address),
+	KEY (user_id),
+	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID) ON UPDATE CASCADE ON DELETE CASCADE 
 )
 ENGINE={$db_engine}
 DEFAULT CHARSET=utf8
