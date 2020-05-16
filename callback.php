@@ -66,37 +66,40 @@
 		DigiID::http_ok($post_data['address']);
 	}
 
-	$nonce = DigiID::extractNonce($post_data['uri']);
-
-	if (!$nonce OR strlen($nonce) != 32) {
-		DigiID::http_error(40, 'Bad nonce' . json_encode($post_data));
-	}
-
-	$uri = digiid_get_callback_url($nonce);
     $post_data_uri = $post_data['uri'];
     $amp_pos = strpos($post_data_uri, '&');
     if ($amp_pos > 0) {
         $post_data_uri = substr($post_data_uri, 0, $amp_pos);
     }
 
+	$nonce = DigiID::extractNonce($post_data_uri);
+	if (!$nonce || strlen($nonce) != 32) {
+		DigiID::http_error(40, 'Bad nonce' . json_encode($post_data));
+	}
+
+	$uri = digiid_get_callback_url($nonce);
+
 	if ($uri != $post_data_uri) {
-		DigiID::http_error(10, 'Bad URI', NULL, NULL, array('expected' => $uri, 'sent_uri' => $post_data['uri']));
+		error_log('Not match ' . $uri . ' != ' . $post_data_uri);
+		DigiID::http_error(10, 'Bad URI', NULL, NULL, ['expected' => $uri, 'sent_uri' => $post_data['uri']]);
 	}
 
 	$wpdb = $GLOBALS['wpdb'];
 
 	$table_name_nonce = "{$wpdb->prefix}digiid_nonce";
 	$table_name_userlink = "{$wpdb->prefix}digiid_userlink";
-	$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE nonce = %s", $nonce);
+	$query = $wpdb->prepare("SELECT * FROM {$table_name_nonce} WHERE nonce = %s", $nonce);
 	$nonce_row = $wpdb->get_row($query, ARRAY_A);
 
 	if (!$nonce_row) {
+		error_log('No such nonce ' . $nonce);
 		DigiID::http_error(41, 'Bad or expired nonce');
 	}
 
 	// For registration
 	if ($nonce_row && $nonce_row['nonce_action'] != 'login'
 		&& $nonce_row['address'] && $nonce_row['address'] != $post_data['address']) {
+		error_log('Different nonce: ' . $nonce_row['address'] . '!=' . $post_data['address']);
 		DigiID::http_error(41, 'Bad or expired nonce');
 	}
 
@@ -109,6 +112,7 @@
 		FALSE);
 
 	if (!$signValid) {
+		error_log('bad signature ' . json_encode($post_data));
 		DigiID::http_error(30, 'Bad signature', $post_data['address'], $post_data['signature'], $post_data['uri']);
 	}
 
@@ -132,12 +136,13 @@
 
 				$db_result = $wpdb->update(
 					$table_name_nonce, 
-					array('address' => $post_data['address']), 
-					array('nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action'])
+					['address' => $post_data['address']], 
+					['nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action']]
 				);
 
 				if (!$db_result) {
-					DigiID::http_error(50, 'Database failer', 502, 'Internal Server Error');
+					error_log('database fail');
+					DigiID::http_error(50, 'Database fail', 502, 'Internal Server Error');
 				}
 
 				break;
@@ -147,11 +152,12 @@
 				if ($current_user_id) {
 					$wpdb->update(
 						$table_name_nonce, 
-						array('address' => $post_data['address']), 
-						array('nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action'])
+						['address' => $post_data['address']],
+						['nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action']]
 					);
 				}
 				else {
+					error_log("Can't add Digi-ID to a userless session");
 					DigiID::http_error(51, "Can't add Digi-ID to a userless session", 501, 'Internal Server Error');
 				}	
 		}

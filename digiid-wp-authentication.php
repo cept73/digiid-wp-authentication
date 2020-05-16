@@ -59,9 +59,10 @@ DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.13');
 
 
 	// Global table names
-	$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
-	$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
-	$table_name_users = "{$GLOBALS['wpdb']->prefix}users";
+	$wpdb = $GLOBALS['wpdb'];
+	$table_name_nonce = "{$wpdb->prefix}digiid_nonce";
+	$table_name_links = "{$wpdb->prefix}digiid_userlink";
+	$table_name_users = "{$wpdb->prefix}users";
 
 
 	// Deny access to admin panel for customers
@@ -282,7 +283,7 @@ HTML;
 
 	/* Custom field validation */
 	function digiid_unique_check ( $errors, $sanitized_user_login, $user_email ) {
-		global $table_name_links;
+		global $table_name_links, $wpdb;
 
 		if (empty($_POST['digiid_addr'])) 
 			return $errors;
@@ -290,14 +291,8 @@ HTML;
 		$address = $_POST['digiid_addr'];
 		$digiid = new DigiID();
 
-		/*if (!$digiid->isAddressValid($address, FALSE) || !$digiid->isAddressValid($address, TRUE))
-		{
-			$errors->add('digiid_unique_check_error', __('<strong>ERROR</strong>: Incorrect Digi-ID address.', 'Digi-ID-Authentication'));
-			return $errors;
-		}*/
-		
-		$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_links} WHERE address = %s", $address);
-		$info = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+		$query = $wpdb->prepare("SELECT * FROM {$table_name_links} WHERE address = %s", $address);
+		$info = $wpdb->get_row($query, ARRAY_A);
 		if (!empty($info)) 
 		{
 			$errors->add('digiid_unique_check_error', __('<strong>ERROR</strong>: Digi-ID already registered to other user.', 'Digi-ID-Authentication') . $info['address']);
@@ -309,7 +304,7 @@ HTML;
 
 	/* After registration - store custom val and clear session */
 	function digiid_register_after( $user_id ) {
-		global $table_name_links;
+		global $table_name_links, $wpdb;
 
 		if (!empty($_POST['digiid_addr']))
 		{
@@ -318,7 +313,7 @@ HTML;
 			$userlink_row['user_id'] = $user_id;
 			$userlink_row['address'] = $_POST['digiid_addr'];
 			$userlink_row['birth'] = current_time('mysql');
-			$GLOBALS['wpdb']->insert( $table_name_links, $userlink_row );
+			$wpdb->insert( $table_name_links, $userlink_row );
 		}
 
 
@@ -341,11 +336,11 @@ HTML;
 	/* Install plugin, add all tables or modifications */
 	function digiid_check_installed()
 	{
-		global $table_name_nonce, $table_name_links, $table_name_users;
+		global $table_name_nonce, $table_name_links, $table_name_users, $wpdb;
 
 		// Detect current engine, use the same
-		$get_engine_table_users = "SELECT count(*) c FROM information_schema WHERE TABLE_NAME = '{$GLOBALS['wpdb']->prefix}users'";
-		$exist = $GLOBALS['wpdb']->get_var($get_engine_table_users);
+		$get_engine_table_users = "SELECT count(*) c FROM information_schema WHERE TABLE_NAME = '{$wpdb->prefix}users'";
+		$exist = $wpdb->get_var($get_engine_table_users);
 		return $exist != 0;
 	}
 
@@ -353,8 +348,7 @@ HTML;
 	/* Install plugin, add all tables or modifications */
 	function digiid_install()
 	{
-		global $table_name_nonce, $table_name_links, $table_name_users;
-		$wpdb = $GLOBALS['wpdb'];
+		global $table_name_nonce, $table_name_links, $table_name_users, $wpdb;
 
 		// Detect current engine, use the same
 		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$wpdb->prefix}users'";
@@ -413,7 +407,7 @@ SQL;
 
 	function digiid_my_option_page()
 	{
-		global $table_name_links;
+		global $table_name_links, $wpdb;
 
 		$user_id = get_current_user_id();
 		if (!$user_id) return;
@@ -445,7 +439,7 @@ SQL;
 							$userlink_row['user_id'] = $user_id;
 							$userlink_row['address'] = $address;
 							$userlink_row['birth'] = current_time('mysql');
-							$result = $GLOBALS['wpdb']->insert( $table_name_links, $userlink_row );
+							$result = $wpdb->insert( $table_name_links, $userlink_row );
 
 							if ($result)
 							{
@@ -538,11 +532,11 @@ HTML;
 						break;
 					}
 
-					$table_name_links = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
+					$table_name_links = "{$wpdb->prefix}digiid_userlink";
 
 					foreach ($try_addresses as $address)
 					{
-						$db_result = $GLOBALS['wpdb']->delete($table_name_links, array('address' => $address, 'user_id' => $user_id));
+						$db_result = $wpdb->delete($table_name_links, array('address' => $address, 'user_id' => $user_id));
 
 						if ($db_result)
 						{
@@ -709,14 +703,13 @@ HTML;
 
 	function digiid_get_nonce($nonce_action)
 	{
-		global $digiid_session_id, $table_name_nonce;
+		global $digiid_session_id, $table_name_nonce, $wpdb;
 
-		$query = "DELETE FROM {$table_name_nonce} WHERE birth is not null AND birth < NOW() - INTERVAL 60 MINUTE";
-		$GLOBALS['wpdb']->query($query);
+		$query = "DELETE FROM `{$table_name_nonce}` WHERE `birth` is not null AND `birth` < (NOW() - INTERVAL 12 HOUR)";
+		$wpdb->query($query);
 
-		//$query = $GLOBALS['wpdb']->prepare("DELETE FROM {$table_name_nonce} WHERE session_id = %s", $digiid_session_id);
-		$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE nonce_action = %s AND session_id = %s", $nonce_action, $digiid_session_id);
-		$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+		$query = $wpdb->prepare("SELECT * FROM `{$table_name_nonce}` WHERE `nonce_action` = %s AND `session_id` = %s", $nonce_action, $digiid_session_id);
+		$nonce_row = $wpdb->get_row($query, ARRAY_A);
 		if ($nonce_row)
 			return $nonce_row['nonce'];
 
@@ -731,7 +724,7 @@ HTML;
 		else
 			$nonce_row['user_id'] = false;
 
-		$db_result = $GLOBALS['wpdb']->insert( $table_name_nonce, $nonce_row );
+		$db_result = $wpdb->insert( $table_name_nonce, $nonce_row );
 		if ($db_result)
 			return $nonce_row['nonce'];
 		
@@ -777,10 +770,9 @@ JS
 
 	function digiid_exit()
 	{
-		global $digiid_session_id, $table_name_nonce;
+		global $digiid_session_id, $table_name_nonce, $wpdb;
 
-		//$GLOBALS['wpdb']->delete($table_name_nonce, array('session_id' => $digiid_session_id));
-		$GLOBALS['wpdb']->delete($table_name_nonce, array('address' => $_SESSION['digiid_addr']));
+		$wpdb->delete($table_name_nonce, array('address' => $_SESSION['digiid_addr']));
 		unset ($_SESSION['digiid_addr']);
 		$digiid_session_id = false;
 	}
@@ -801,18 +793,18 @@ JS
 
 	function digiid_list_users_addresses($user_id)
 	{
-		global $table_name_links;
+		global $table_name_links, $wpdb;
 
 		if ($user_id === TRUE)
 		{
 			$query = "SELECT * FROM {$table_name_links}";
-			return $GLOBALS['wpdb']->get_results($query, ARRAY_A);
+			return $wpdb->get_results($query, ARRAY_A);
 		}
 		else
 		{
 			$query = "SELECT * FROM {$table_name_links} WHERE user_id = %d";
-			$query = $GLOBALS['wpdb']->prepare($query, (int) $user_id);
-			return $GLOBALS['wpdb']->get_results($query, ARRAY_A);
+			$query = $wpdb->prepare($query, (int) $user_id);
+			return $wpdb->get_results($query, ARRAY_A);
 		}
 	}
 
@@ -837,13 +829,13 @@ HTML;
 	*/
 	function digiid_get_addr($user_id = null)
 	{
-		global $table_name_links;
+		global $table_name_links, $wpdb;
 
 		// Current user by default
 		if ($user_id == null) $user_id = get_current_user_id();
 
-		$query = $GLOBALS['wpdb']->prepare($ask = "SELECT * FROM {$table_name_links} WHERE user_id = %d", $user_id);
-		$user_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+		$query = $wpdb->prepare($ask = "SELECT * FROM {$table_name_links} WHERE user_id = %d", $user_id);
+		$user_row = $wpdb->get_row($query, ARRAY_A);
 
 		return ($user_row) ? $user_row['address'] : null;
 	}
