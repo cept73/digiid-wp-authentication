@@ -1,11 +1,11 @@
 Digi-ID Authentication
 ===
 
-Contributors: Taranov Sergey (cept), digicontributer
+Contributors: cept, digicontributer
 Tags: Authentication Digibyte Digi-ID digiid
 Requires at least: 3.0.1
-Tested up to: 5.2.1
-Stable tag: 1.0.12
+Tested up to: 5.4.1
+Stable tag: 1.0.13
 License: MIT License
 License URI: https://opensource.org/licenses/MIT
 
