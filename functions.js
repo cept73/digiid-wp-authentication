@@ -1,11 +1,11 @@
 
 
 /* Timer params */
-var digiid_timers_started = {};
-var digiid_timers = {};
-var digiid_old_href = {};
-var digiid_config = {};
-var digiid_base_ajax = '';
+var digiid_timers_started   = {}
+var digiid_timers           = {}
+var digiid_old_href         = {}
+var digiid_config           = {}
+var digiid_base_ajax        = ''
 
 
 /* Detect show or hide QR, start or stop timer */
@@ -23,15 +23,13 @@ function digiid_qr_change_visibility(id, new_state = null)
     // Autodetect
     if (new_state == null)
     {
-        /*if (jQuery("input[name=digiid_addr]").length == 0)
-            new_state = 'hide';
-        else*/ if (jQuery("input[name=digiid_addr]", obj).length == 0)
+        if (jQuery("input[name=digiid_addr]", obj).length == 0)
             new_state = 'show';
         else
             new_state = 'hide';
     }
 
-    old_state = obj.hasClass('timeout') ? 'hide' : 'show';
+    old_state = obj.hasClass('timeout') ? 'hide' : 'show'
     if (old_state == new_state) return;
 
     if (jQuery('.digiid', obj).length == 0)
@@ -58,14 +56,14 @@ function digiid_qr_change_visibility(id, new_state = null)
 
             // For complete - special class
             if (new_state == 'complete') {
-                digiid_qr_class = 'qr_completed';
-                digiid_qr_script = 'return false;';
-                digiid_qr_title = '';
+                digiid_qr_class     = 'qr_completed';
+                digiid_qr_script    = 'return false;';
+                digiid_qr_title     = '';
             }
             else {
-                digiid_qr_class = 'timeout';
-                digiid_qr_script = 'digiid_reload("'+id+'")';
-                digiid_qr_title = 'Click to generate new QR code';
+                digiid_qr_class     = 'timeout';
+                digiid_qr_script    = 'digiid_reload("'+id+'")';
+                digiid_qr_title     = 'Click to generate new QR code';
             }
 
             digiid_block.parent().addClass(digiid_qr_class);
@@ -106,8 +104,6 @@ function digiid_qr_change_visibility(id, new_state = null)
 /* Reload page */
 function digiid_reload(id)
 {
-    // Remove focus
-    //jQuery('body').focus()
     // Show
     digiid_qr_change_visibility(id, 'show')
 }
@@ -141,7 +137,6 @@ function digiid_clear_qr(id = null)
     digiid_addr.val('');
 
     // Show QR 
-    //digiid_qr_change_visibility(id, 'show'); 
     digiid_on_change_reg_input_addr();
 }
 
@@ -319,19 +314,6 @@ function digiid_after_ajax (id, action, json)
         }
     }
 
-    // Widget
-    /*if (action == 'wc-login') 
-    {
-        if (json.status == 2)
-        {
-            // .digiid_msg
-            obj.next().html('>>>' + json.html).addClass('message')
-            console.log (json.html)
-            console.log (obj)
-            console.log (id)
-        }
-    }*/
-
     if (json.stop > 0)
     {
         digiid_qr_change_visibility(id, 'hide');
@@ -342,22 +324,30 @@ function digiid_after_ajax (id, action, json)
         div_msg = obj.next().html(json.message).addClass('message')
         if (json.message_class) div_msg.addClass(json.message_class)
     }
-    else
-
-    if (json.reload > 0)
+    else if (json.reload > 0)
     {
         // Stop all timers
         digiid_qr_change_visibility(null, 'complete')
 
         // Detect url to redirect
         var url = window.location.href;
-        if (json.redirect_url) url = json.redirect_url; 
-        else {
+        if (json.redirect_url)
+        {
+            url = json.redirect_url;
+        }
+        else
+        {
             redirect_input = jQuery('input[name=redirect_to]', obj);
-            if (redirect_input.length == 0) redirect_input = jQuery('input[name=redirect_to]');
+
+            if (redirect_input.length == 0) 
+            {
+                redirect_input = jQuery('input[name=redirect_to]');
+            }
 
             if (redirect_input.length && redirect_input.val() != '')
+            {
                 url = redirect_input.val();
+            }
         }
         if (url) window.location.href = url;
     }
@@ -371,18 +361,17 @@ function digiid_remove_address(el)
 
     var ajax = new XMLHttpRequest();
     ajax.open("GET", ajax_url, true);
-    ajax.onreadystatechange =
-        function ()
-        {
-            if(ajax.readyState != 4 || ajax.status != 200)
-                return;
+    ajax.onreadystatechange = function () {
+        if (ajax.readyState != 4 || ajax.status != 200)
+            return;
 
-            if(ajax.responseText != '')
-            {
-                var json = JSON.parse(ajax.responseText);
-                if (json.reload) window.location = window.location;
-            }
+        if (ajax.responseText != '')
+        {
+            var json = JSON.parse(ajax.responseText);
+            if (json.reload) window.location = window.location;
         }
+    }
+
     ajax.send();
 }
 

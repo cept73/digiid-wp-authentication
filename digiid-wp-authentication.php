@@ -2,19 +2,19 @@
 /**
  * @package Digi-ID Authentication
  * @author Taranov Sergey (Cept)
- * @version 1.0.12
+ * @version 1.0.13
  */
 /*
 Plugin Name: Digi-ID Authentication
 Description: Digi-ID Authentication, extends WordPress default authentication with the Digi-ID protocol
-Version: 1.0.12
+Version: 1.0.13
 Author: Taranov Sergey (Cept), digicontributor
 Author URI: http://github.com/cept73
 */
 
 namespace DigiIdAuthentication;
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.12');
+DEFINE("DIGIID_AUTHENTICATION_PLUGIN_VERSION", '1.0.13');
 
 
 	require_once ('required_classes.php');
@@ -354,45 +354,46 @@ HTML;
 	function digiid_install()
 	{
 		global $table_name_nonce, $table_name_links, $table_name_users;
+		$wpdb = $GLOBALS['wpdb'];
 
 		// Detect current engine, use the same
-		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$GLOBALS['wpdb']->prefix}users'";
-		$db_engine = $GLOBALS['wpdb']->get_var($get_engine_table_users);
+		$get_engine_table_users = "SELECT engine FROM information_schema.TABLES WHERE TABLE_NAME='{$wpdb->prefix}users'";
+		$db_engine = $wpdb->get_var($get_engine_table_users);
 		if (!$db_engine) $db_engine = "InnoDB"; // if some error while detection, use InnoDB
-		
+
+		$create_sql_params = " ENGINE=$db_engine DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+
 		$create_table_nonce = <<<SQL
-CREATE TABLE {$table_name_nonce} (
-	nonce VARCHAR(32) NOT NULL,
-	address VARCHAR(34) DEFAULT NULL,
-	session_id VARCHAR(40) NOT NULL,
-	user_id BIGINT(20) UNSIGNED NOT NULL,
-	nonce_action VARCHAR(40) NOT NULL,
-	birth DATETIME NOT NULL,
-	PRIMARY KEY (nonce)
+CREATE TABLE IF NOT EXISTS `$table_name_nonce` (
+	`nonce` VARCHAR(32) NOT NULL,
+	`address` VARCHAR(34) DEFAULT NULL,
+	`session_id` VARCHAR(40) NOT NULL,
+	`user_id` BIGINT(20) UNSIGNED NOT NULL,
+	`nonce_action` VARCHAR(40) NOT NULL,
+	`birth` DATETIME NOT NULL,
+	PRIMARY KEY `pk_{$table_name_nonce}_nonce` (`nonce`)
 )
-ENGINE={$db_engine}
-DEFAULT CHARSET=utf8
-COLLATE=utf8_bin
+$create_sql_params
 SQL;
 
 		$create_table_links = <<<SQL
-CREATE TABLE {$table_name_links} (
-	user_id BIGINT(20) UNSIGNED NOT NULL,
-	birth DATETIME NOT NULL,
-	address VARCHAR(34) NOT NULL,
-	pulse DATETIME NOT NULL,
-	PRIMARY KEY (address),
-	KEY (user_id),
-	FOREIGN KEY (user_id) REFERENCES {$table_name_users}(ID) ON UPDATE CASCADE ON DELETE CASCADE 
+CREATE TABLE IF NOT EXISTS `$table_name_links` (
+	`user_id` BIGINT(20) UNSIGNED NOT NULL,
+	`birth` DATETIME NOT NULL,
+	`address` VARCHAR(34) NOT NULL,
+	`pulse` DATETIME NOT NULL,
+	PRIMARY KEY `pk_{$table_name_links}_address` (`address`),
+	KEY `uq_{$table_name_links}_user_id` (`user_id`),
+	FOREIGN KEY `fk_{$table_name_links}_user_id` (`user_id`) REFERENCES `$table_name_users` (`id`) 
+		ON UPDATE CASCADE ON DELETE CASCADE
 )
-ENGINE={$db_engine}
-DEFAULT CHARSET=utf8
-COLLATE=utf8_bin
+$create_sql_params
 SQL;
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		dbDelta( $create_table_nonce );
-		dbDelta( $create_table_links );
+
+		$wpdb->query( $create_table_nonce );
+		$wpdb->query( $create_table_links );
 
 		update_option( "digiid_plugin_version", DIGIID_AUTHENTICATION_PLUGIN_VERSION );
 	}
@@ -831,6 +832,22 @@ HTML;
 		load_plugin_textdomain( 'Digi-ID-Authentication', false, $plugin_dir );
 	}
 
+	/*
+	* Get Digi-ID address by user_id 
+	*/
+	function digiid_get_addr($user_id = null)
+	{
+		global $table_name_links;
+
+		// Current user by default
+		if ($user_id == null) $user_id = get_current_user_id();
+
+		$query = $GLOBALS['wpdb']->prepare($ask = "SELECT * FROM {$table_name_links} WHERE user_id = %d", $user_id);
+		$user_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+
+		return ($user_row) ? $user_row['address'] : null;
+	}
+
 
 // Add Link (Tab) to My Account menu
 add_filter ('woocommerce_account_menu_items', '\DigiIdAuthentication\digiid_wc_account_menu', 40);
@@ -858,7 +875,6 @@ function digiid_wc_menu_endpoint()
 }
 
 
-// woocommerce_account_{ENDPOINT NAME}_endpoint
 add_action( 'woocommerce_account_digiid_endpoint', '\DigiIdAuthentication\digiid_wc_endpoint_content' );
 function digiid_wc_endpoint_content()
 {
@@ -956,7 +972,6 @@ function digiid_shortcode()
 }
 
 
-/* */
 add_filter('woocommerce_widget_shopping_cart_buttons', '\DigiIdAuthentication\digiid_wc_after_cart', 40);
 function digiid_wc_after_cart()
 {
@@ -979,8 +994,8 @@ function digiid_wc_validate_extra_register_fields($username, $email, $validation
 
 
 /**
-* Below code save extra fields.
-*/
+ * Below code save extra fields.
+ */
 add_action('woocommerce_created_customer', 'digiid_wc_save_extra_register_fields');
 function digiid_wc_save_extra_register_fields($customer_id)
 {
@@ -988,21 +1003,4 @@ function digiid_wc_save_extra_register_fields($customer_id)
 		// Phone input filed which is used in WooCommerce
 		update_user_meta($customer_id, 'digiid_addr', sanitize_text_field($_POST['digiid_addr']));
 	}
-}
-
-
-/*
- * Get Digi-ID address by user_id 
- */
-function digiid_get_addr($user_id = null)
-{
-	global $table_name_links;
-
-	// Current user by default
-	if ($user_id == null) $user_id = get_current_user_id();
-
-	$query = $GLOBALS['wpdb']->prepare($ask = "SELECT * FROM {$table_name_links} WHERE user_id = %d", $user_id);
-	$user_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
-
-	return ($user_row) ? $user_row['address'] : null;
 }

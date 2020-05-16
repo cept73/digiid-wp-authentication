@@ -1,66 +1,60 @@
 <?php
+	namespace DigiIdAuthentication;
 
-namespace DigiIdAuthentication;
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
-if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
+	if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+	if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 
-	$raw_post_data = file_get_contents('php://input');
 	require_once("required_classes.php");
-
-	function digiid_import_data ($input)
+	function digiid_import_data($input)
 	{
-		$result = array ();
+		$result = [];
 
-		$variables = array('address'=>'string', 'signature'=>'string', 'uri'=>'string');
-		foreach($variables as $key => $type)
-		{
-			if (isset($input[$key]))
-			{
+		$variables = ['address'=>'string', 'signature'=>'string', 'uri'=>'string'];
+		foreach($variables as $key => $type) {
+			if (isset($input[$key])) {
 				$raw_val = $input[$key];
 				$sanitized_val = '';
-				switch ($type) 
-				{
+				switch ($type) {
 					case 'string': 	$sanitized_val = sanitize_text_field($raw_val); break;
-					case 'url': 	$sanitized_val = esc_url_raw($raw_val); break;
+					case 'url': 	$sanitized_val = esc_url_raw($raw_val); 		break;
 				}
 				$result[$key] = $sanitized_val;
 			}
-			else
+			else {
 				$result[$key] = null;
+			}
 		}
 		return $result;
 	}
 
 
-	$json = null;
-	$uri = null;
-	$nonce = null;
-	$GLOBALS['digiid_vars']['json'] = &$json;
-	$GLOBALS['digiid_vars']['uri'] = &$uri;
-	$GLOBALS['digiid_vars']['nonce'] = &$nonce;
+	$raw_post_data = file_get_contents('php://input');
+
+	$json	= null;
+	$uri 	= null;
+	$nonce 	= null;
+	$GLOBALS['digiid_vars']['json'] 	= &$json;
+	$GLOBALS['digiid_vars']['uri'] 		= &$uri;
+	$GLOBALS['digiid_vars']['nonce'] 	= &$nonce;
 
 	$session_id = session_id();
-	if (!$session_id)
-	{
+	if (!$session_id) {
 		session_start();
 		$session_id = session_id();
 	}
 
 	$current_user_id = get_current_user_id();
 
-	if (substr($raw_post_data, 0, 1) == "{")
-	{
+	if (substr($raw_post_data, 0, 1) == "{") {
 		$json = json_decode($raw_post_data, true);
-		$post_data = digiid_import_data ($json);
+		$post_data = digiid_import_data($json);
 	}
-	else
-	{
+	else {
 		$json = FALSE;
 		$post_data = digiid_import_data ($_POST);
 	}
 
-	if (!empty($post_data['digiid_addr']))
-	{
+	if (!empty($post_data['digiid_addr'])) {
 		$_SESSION['digiid_addr'] = $post_data['digiid_addr'];
 	}
 
@@ -79,92 +73,88 @@ if ( ! defined( 'DIGIID_AUTHENTICATION_PLUGIN_VERSION') ) exit;
 	}
 
 	$uri = digiid_get_callback_url($nonce);
+    $post_data_uri = $post_data['uri'];
+    $amp_pos = strpos($post_data_uri, '&');
+    if ($amp_pos > 0) {
+        $post_data_uri = substr($post_data_uri, 0, $amp_pos);
+    }
 
-	if ($uri != $post_data['uri']) {
+	if ($uri != $post_data_uri) {
 		DigiID::http_error(10, 'Bad URI', NULL, NULL, array('expected' => $uri, 'sent_uri' => $post_data['uri']));
 	}
 
-	$table_name_nonce = "{$GLOBALS['wpdb']->prefix}digiid_nonce";
-	$table_name_userlink = "{$GLOBALS['wpdb']->prefix}digiid_userlink";
+	$wpdb = $GLOBALS['wpdb'];
+
+	$table_name_nonce = "{$wpdb->prefix}digiid_nonce";
+	$table_name_userlink = "{$wpdb->prefix}digiid_userlink";
 	$query = $GLOBALS['wpdb']->prepare("SELECT * FROM {$table_name_nonce} WHERE nonce = %s", $nonce);
-	$nonce_row = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+	$nonce_row = $wpdb->get_row($query, ARRAY_A);
 
 	if (!$nonce_row) {
 		DigiID::http_error(41, 'Bad or expired nonce');
 	}
 
 	// For registration
-	if ($nonce_row && $nonce_row['nonce_action'] != 'login' && $nonce_row['address'] && $nonce_row['address'] != $post_data['address'])
-	{
-		DigiID::http_error(41, 'Bad or expired nonce');// . $nonce_row['address'] . '!=' . $post_data['address']);
+	if ($nonce_row && $nonce_row['nonce_action'] != 'login'
+		&& $nonce_row['address'] && $nonce_row['address'] != $post_data['address']) {
+		DigiID::http_error(41, 'Bad or expired nonce');
 	}
 
 	$digiid = new DigiID();
-	
-	$signValid = $digiid->isMessageSignatureValidSafe($post_data['address'], $post_data['signature'], $post_data['uri'], FALSE);
+
+	$signValid = $digiid->isMessageSignatureValidSafe(
+		$post_data['address'], 
+		$post_data['signature'], 
+		$post_data['uri'], 
+		FALSE);
 
 	if (!$signValid) {
 		DigiID::http_error(30, 'Bad signature', $post_data['address'], $post_data['signature'], $post_data['uri']);
 	}
 
-	if (!$nonce_row['address'])
-	{
+	if (!$nonce_row['address']) {
 		$nonce_row['address'] = $post_data['address'];
-		switch ($nonce_row['nonce_action'])
-		{
+		switch ($nonce_row['nonce_action']) {
 			case 'register':
 				// No duplicates allowed
-				$query = $GLOBALS['wpdb']->prepare(
+				$query = $wpdb->prepare(
 					"SELECT * FROM {$table_name_userlink} WHERE address = %s AND nonce_action = %s", 
-					array(
-						$nonce_row['address'],
-						$nonce_row['nonce_action']
-					)
+					[$nonce_row['address'], $nonce_row['nonce_action']]
 				);
-				$result = $GLOBALS['wpdb']->get_row($query, ARRAY_A);
+				$result = $wpdb->get_row($query, ARRAY_A);
 				if ($result) {
 					DigiID::http_error(42, 'Already registered');
 				}
-
-				//DigiID::http_ok($post_data['address'], $nonce);
-				//break;
 
 			case 'login':
 			case 'wc-login':
 			case 'wc-myaccount':
 
-				$db_result = $GLOBALS['wpdb']->update(
+				$db_result = $wpdb->update(
 					$table_name_nonce, 
 					array('address' => $post_data['address']), 
 					array('nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action'])
 				);
 
-				if (!$db_result)
+				if (!$db_result) {
 					DigiID::http_error(50, 'Database failer', 502, 'Internal Server Error');
+				}
 
 				break;
 
 			case 'add':
 				$current_user_id = $nonce_row['user_id'];
-				if ($current_user_id)
-				{
-					/*$query = $GLOBALS['wpdb']->prepare	(
-						"INSERT INTO {$table_name_userlink} SET user_id = %d, address = %s, birth = NOW()", 
-						$current_user_id, $post_data['address']
-					);
-					$GLOBALS['wpdb']->query($query);*/
-
-					$GLOBALS['wpdb']->update(
+				if ($current_user_id) {
+					$wpdb->update(
 						$table_name_nonce, 
 						array('address' => $post_data['address']), 
 						array('nonce' => $nonce, 'nonce_action' => $nonce_row['nonce_action'])
 					);
 				}
-				else
+				else {
 					DigiID::http_error(51, "Can't add Digi-ID to a userless session", 501, 'Internal Server Error');
-	
+				}	
 		}
 	}
 
 	DigiID::http_ok($post_data['address'], $nonce);
-
